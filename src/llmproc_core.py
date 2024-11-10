@@ -1,20 +1,9 @@
 import anthropic
 
-def load_client() -> anthropic.Anthropic:
-    try:
-        with open('key.txt', 'r') as file:
-            api_key = file.read().strip()
-        return anthropic.Anthropic(api_key=api_key)
-    except FileNotFoundError:
-        print("key.txt file not found")
-        raise
-    except Exception as e:
-        print(f"Error loading API key: {str(e)}")
-        raise
+def load_llm_client(api_key) -> anthropic.Anthropic:
+    return anthropic.Anthropic(api_key=api_key)
 
-client = load_client()
-
-def llm_prompt(prompt, llm_task_type="summariser", prefill=""):
+def llm_prompt(prompt, client, llm_task_type="summariser", prefill="" ):
     messages = [ {
             'role': "user",
             'content': [ {'type': "text", 'text': prompt} ]
