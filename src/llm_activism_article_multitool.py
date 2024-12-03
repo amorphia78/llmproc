@@ -275,7 +275,7 @@ def produce_output_summary_process_html(article):
     html_output = "<html><body>"
     html_output += f"<h1>{article['title']}</h1>"
     html_output += "<h2>Original:</h2>" + format_html_body_text(article["text"])
-    html_output += f"<p>Word count: {article["text_word_count"]}</p>"
+    html_output += f"<p>Word count: {article['text_word_count']}</p>"
     if article["summarised"]:
         html_output += "<h2>Summary:</h2>"
         html_output += format_html_body_text(article["summary"])
@@ -315,11 +315,11 @@ def prepare_articles(articles):
             if not match:
                 raise ValueError("Unable to create ID for article with missing ID: " + url)
             id_code = match.group(1) + '-' + '-'.join(match.group(2, 3, 4))
-            warnings.warn( f"Article '{article["url"]}' has no ID, substituting {id_code} which will only work well for certain Daily Mail articles", UserWarning)
+            warnings.warn( f"Article '{article['url']}' has no ID, substituting {id_code} which will only work well for certain Daily Mail articles", UserWarning)
             article["id"] = id_code
         if "source" not in article:
             article["source"] = "Daily-Mail"
-            warnings.warn( f"Article '{article["id"]}' has no source, assuming Daily Mail", UserWarning)
+            warnings.warn( f"Article '{article['id']}' has no source, assuming Daily Mail", UserWarning)
         if article["subtitle"] is None:
             article["subtitle"] = ""
         article["long_subtitle_to_body"] = False
@@ -334,7 +334,7 @@ def prepare_articles(articles):
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
 def process_article(article, do_screening = True, do_coding = False, do_summary = False ):
-    print(f"Processing {article['id']} word count " + str(article["text_word_count"]))
+    print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     if do_screening:
         article["owe_focussed"] = owe_focussed_via_cache(article)
         print("OWE is " + article["owe_focussed"])
