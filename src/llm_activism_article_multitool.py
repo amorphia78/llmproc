@@ -256,7 +256,7 @@ def code_article(article, version):
 
 def format_html_body_text(text,breaks_number="single"):
     breaks = "<br>" if breaks_number == "single" else "<br><br>"
-    return f"<p>{html.escape(text).replace('\n', breaks).replace('\\"', '&quot;')}</p>"
+    return f"<p>{html.escape(text).replace('\n', breaks).replace(r'\"', '&quot;')}</p>"
 
 def make_html_table(text, header):
     html_output = "<table border='1'>"
