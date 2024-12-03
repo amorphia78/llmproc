@@ -22,10 +22,12 @@ def custom_formatwarning(message, category, *_args, **_kwargs ):
 
 warnings.formatwarning = custom_formatwarning
 
-global client
+coding_form = None
 
-with open("protestCharacteristicForm.tsv", 'r') as coding_form_file:
-    coding_form = coding_form_file.read()
+def read_coding_form( coding_form_file = "protestCharacteristicForm.tsv" ):
+    global coding_form
+    with open( coding_form_file, 'r') as coding_form_file:
+        coding_form = coding_form_file.read()
 
 def process_with_cache(process_func, article):
     cache_dir = f"llm_caches/{process_func.__name__}"
