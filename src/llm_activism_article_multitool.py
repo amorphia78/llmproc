@@ -283,7 +283,7 @@ def produce_output_summary_process_html(article):
         if article["resummarised"] == "Yes":
             html_output += "<h2>Resummary:</h2>"
             html_output += format_html_body_text(article["resummary"])
-            html_output += f"<p>Resummary word count: {article["resummary_word_count"]}</p>"
+            html_output += f"<p>Resummary word count: {article['resummary_word_count']}</p>"
             html_output += "<h2>Original, summary and resummary coding comparison:</h2>"
             html_output += make_html_table(compare_summary_and_resummary_matches(article), "<tr><th>Question</th><th>Original</th><th>Summary</th><th>Match</th><th>Resummary</th><th>Match</th></tr>")
         else:
