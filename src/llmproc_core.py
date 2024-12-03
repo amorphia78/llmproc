@@ -12,16 +12,17 @@ def load_client(api_key: str | None = None) -> anthropic.Anthropic:
     if api_key is not None:
         client = anthropic.Anthropic(api_key=api_key)
     # Otherwise, attempt to load the key from the file
-    try:
-        with open('key.txt', 'r') as file:
-            file_api_key = file.read().strip()
-        client = anthropic.Anthropic(api_key=file_api_key)
-    except FileNotFoundError:
-        print("key.txt file not found")
-        raise
-    except Exception as e:
-        print(f"Error loading API key: {str(e)}")
-        raise
+    else:
+        try:
+            with open('key.txt', 'r') as file:
+                file_api_key = file.read().strip()
+            client = anthropic.Anthropic(api_key=file_api_key)
+        except FileNotFoundError:
+            print("key.txt file not found")
+            raise
+        except Exception as e:
+            print(f"Error loading API key: {str(e)}")
+            raise
 
 def send_prompt(prompt, llm_task_type="summariser", prefill="", prior_prompt="", prior_llm ="" ):
     global client
