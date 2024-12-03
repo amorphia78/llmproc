@@ -1,4 +1,3 @@
-import anthropic
 import json
 import html
 import re
@@ -7,6 +6,7 @@ import glob
 import os
 import warnings
 import random
+import sys
 import llmproc_core as llm
 import llm_activism_article_prompts_and_strings as pas
 
@@ -631,6 +631,7 @@ def process_articles(config_file, key ):
     else:
         articles_to_loop = articles.values()
     for article in articles_to_loop:
+        sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising)
