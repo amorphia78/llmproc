@@ -279,7 +279,7 @@ def produce_output_summary_process_html(article):
     if article["summarised"]:
         html_output += "<h2>Summary:</h2>"
         html_output += format_html_body_text(article["summary"])
-        html_output += f"<p>Summary word count: {article["summary_word_count"]}</p>"
+        html_output += f"<p>Summary word count: {article['summary_word_count']}</p>"
         if article["resummarised"] == "Yes":
             html_output += "<h2>Resummary:</h2>"
             html_output += format_html_body_text(article["resummary"])
