@@ -516,7 +516,7 @@ def read_all_article_content(base_path):
     all_json_data = {}
     subdirectories = [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
     for subdir in subdirectories:
-        print_and_flush("Reading articles from {subdir}")
+        print_and_flush(f"Reading articles from {subdir}")
         file_pattern = os.path.join(base_path, subdir, "*_parsed.json")
         json_files = glob.glob(file_pattern)
         for json_file in json_files:
@@ -616,8 +616,31 @@ def select_articles_from_file(articles, file_name):
                 if articles[key]['id'] == id_code:
                     articles[key]['selected_for_processing'] = True
 
-def process_articles(config_file, key ):
-    articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename = load_config(config_file )
+def process_articles(
+        key,
+        articles_path = "../INPUT_article_contents",
+        do_screening = False,
+        do_coding = False,
+        do_summarising = False,
+        process_only_selected = True,
+        stop_after = 50,
+        count_type = "any",
+        article_order_random_seed = 420,
+        output_article_full = False,
+        output_article_summarised = False,
+        output_article_summary_process = False,
+        output_only_articles_passing_screening = False,
+        output_detailed_word_counts = False,
+        article_selection = "random",
+        article_exclusion_list = "none",
+        output_picture_tags = False,
+        coding_output_filename = "unset",
+        config_file = "none"
+    ):
+    if config_file != "none":
+        articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename = load_config(config_file )
+    if coding_output_filename == "unset":
+        coding_output_filename = f"coding_output_{timestamp}.tsv"
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
