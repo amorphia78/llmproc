@@ -507,11 +507,16 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
 skip_list = ["https://www.theguardian.com/music/live/2022/jun/24/glastonbury-live-2022-friday?filterKeyEvents=false&page=with:block-62b5c8e18f0875bb61abafc0",
 "https://www.theguardian.com/books/2022/may/19/ruth-pen-by-emilie-pine-review-a-tale-of-two-lives" ]
 
+def print_and_flush(message):
+    print(message)
+    sys.stdout.flush()
+
 def read_all_article_content(base_path):
-    print("Reading input")
+    print_and_flush("Reading articles")
     all_json_data = {}
     subdirectories = [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
     for subdir in subdirectories:
+        print_and_flush("Reading articles from {subdir}")
         file_pattern = os.path.join(base_path, subdir, "*_parsed.json")
         json_files = glob.glob(file_pattern)
         for json_file in json_files:
@@ -519,7 +524,7 @@ def read_all_article_content(base_path):
                 json_data = json.load(input_file)
                 filtered_data = {k: v for k, v in json_data.items() if k not in skip_list}
                 all_json_data.update(filtered_data)
-    print(f"Read {len(all_json_data)} articles")
+    print_and_flush(f"Read {len(all_json_data)} articles")
     return all_json_data
 
 def select_random_articles(articles, seed=421):

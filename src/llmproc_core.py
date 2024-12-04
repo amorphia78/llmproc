@@ -8,7 +8,6 @@ client = None
 def load_client(api_key: str | None = None) -> anthropic.Anthropic:
     global client
     # If an API key string is provided directly, use it to create the client
-    print("In load_client() api_key is: " + api_key)
     if api_key is not None:
         client = anthropic.Anthropic(api_key=api_key)
     # Otherwise, attempt to load the key from the file
