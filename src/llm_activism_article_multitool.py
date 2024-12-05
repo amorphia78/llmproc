@@ -542,7 +542,7 @@ def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
     screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "PASSES_SCREENING"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
-    with open(file_name, 'a') as f:
+    with open(file_name, 'w') as f:
         f.write("\t".join( [*base_headers, *screening_headers, *coding_headers] ) + "\n")
 
 def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
