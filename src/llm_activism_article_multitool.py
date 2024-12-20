@@ -29,26 +29,6 @@ def read_coding_form( coding_form_file = "protestCharacteristicForm.tsv" ):
     with open( coding_form_file, 'r') as coding_form_file:
         coding_form = coding_form_file.read()
 
-def process_with_cache(process_func, article):
-    cache_dir = f"llm_caches/{process_func.__name__}"
-    os.makedirs(cache_dir, exist_ok=True)
-    cache_file = f"{cache_dir}/{article['id']}.json"
-    if os.path.exists(cache_file):
-        print(f"{process_func.__name__} for article {article['id']} (retrieving cache)")
-        with open(cache_file, 'r', encoding='utf-8') as f:
-            cached_data = json.load(f)
-            return cached_data['string_data'] if 'string_data' in cached_data else cached_data
-    else:
-        print(f"{process_func.__name__} for article {article['id']} (consulting LLM)")
-        result = process_func(article)
-        if isinstance(result, str):
-            data_to_store = {'string_data': result}
-        else:
-            data_to_store = result
-        with open(cache_file, 'w', encoding='utf-8') as f:
-            json.dump(data_to_store, ensure_ascii=False, indent=2, fp=f)  # type: ignore
-        return result
-
 def load_config(config_file_path: str):
     try:
         with open(config_file_path, 'r') as file:
@@ -70,13 +50,15 @@ def load_config(config_file_path: str):
         article_exclusion_list = config.get('article_exclusion_list', "none")
         output_picture_tags = config.get('output_picture_tags', False )
         coding_output_filename = config.get('coding_output_filename', f"output_folders/coding_output/coding_output_{timestamp}.tsv" )
+        html_output_filename = config.get('html_output_filename', f"output_folders/article_HTML_output/formatted_articles_{timestamp}.tsv")
+
         if do_coding and not do_screening:
             warnings.warn("Not tested: do_screening false with do_coding true.", UserWarning)
         if do_summarising and not do_screening:
             warnings.warn("do_summarising without do_screening could result in strange summaries for articles that don't pass screening.", UserWarning)
         if ( output_article_summarised or output_article_summarised ) and not do_summarising:
             warnings.warn("Summary output requested without summary.", UserWarning)
-        return articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename
+        return articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename
     except FileNotFoundError:
         print(f"Configuration file not found: {config_file_path}")
         raise
@@ -189,7 +171,7 @@ def summarise_article(article):
         raise ValueError("The summary did not begin with the article title.")
 
 def summarise_article_via_cache(article):
-    return process_with_cache( summarise_article, article )
+    return llm.process_with_cache( summarise_article, article )
 
 def resummarise_article(article):
     if article["summary_word_count"] < 350:
@@ -210,7 +192,7 @@ def owe_focussed(article):
     return yes_or_no
 
 def owe_focussed_via_cache(article):
-    return process_with_cache( owe_focussed, article )
+    return llm.process_with_cache( owe_focussed, article )
 
 def parse_and_validate_screening_response(response):
     lines = response.strip().split('\n')
@@ -240,7 +222,7 @@ def full_screening(article):
     return parse_and_validate_screening_response(response)
 
 def full_screening_via_cache(article):
-    return process_with_cache( full_screening, article )
+    return llm.process_with_cache( full_screening, article )
 
 def code_article(article, version):
     title_and_body = get_title_and_subtitle_and_article(article, article[version])
@@ -505,7 +487,7 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
 #https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/article_images/BBC/BBC_2020-09-01_Arrests-as-Extinction_img1.webp
 
 skip_list = ["https://www.theguardian.com/music/live/2022/jun/24/glastonbury-live-2022-friday?filterKeyEvents=false&page=with:block-62b5c8e18f0875bb61abafc0",
-"https://www.theguardian.com/books/2022/may/19/ruth-pen-by-emilie-pine-review-a-tale-of-two-lives" ]
+"https://www.theguardian.com/books/2022/may/19/ruth-pen-by-emilie-pine-review-a-tale-of-two-lives" ] #These are duplicates
 
 def print_and_flush(message):
     print(message)
@@ -554,7 +536,7 @@ def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
         coding_output_file.write("\t".join(values))
         if do_coding and article["passes_screening"] == "Yes":
             coding_output_file.write(
-                "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.pas.rating_code_names) + "\n")
+                "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")
             if do_summarising and article["summarised"]:
                 coding_output_file.write("\t".join([article["id"], article["title"], article["url"],
                                                     "summarised", str(article["summary_word_count"])]) + "\t" * 11)
@@ -574,8 +556,7 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(article, output_article_full, output_article_summarised, output_picture_tags):
-    filename = f"output_folders/article_HTML_output/formatted_articles_{timestamp}.html"
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags):
     if output_article_full:
         print(f"Outputting formatted (original), ID: {article['id']}; word count: {article['text_word_count']}")
         with open(filename, 'a', encoding='utf-8') as f:
@@ -596,15 +577,13 @@ def output_word_counts(article):
     with open(filename, 'a', encoding='utf-8') as f:
         f.write(f"{article['id']}\t{article['source']}\t{article['title_word_count']}\t{article['subtitle_word_count']}\t{article['text_word_count']}\n")
 
-
 def assemble_exclusion_list(exclusion_list):
-    if exclusion_list != "none":
-        with open('formatted_articles_bbc_20241016_232710.html', 'r', encoding='utf-8') as file:
-            content = file.read()
-        pattern = r'<h2>ID: (.*?)</h2>'
-        matches = re.findall(pattern, content)
-        id_list = [ *[ sanitise_name( x ) for x in matches ], "Mirror_2021-10-13_Who-are-Insulate"]
-        return id_list
+    matches = []
+    for filename in exclusion_list:
+        with open(filename, 'r', encoding='utf-8') as file:
+            matches.extend(line.strip() for line in file if line.strip())
+    id_list = [*[sanitise_name(x) for x in matches], "Mirror_2021-10-13_Who-are-Insulate"]
+    return id_list
 
 def select_articles_from_file(articles, file_name):
     for key in articles:
@@ -618,11 +597,11 @@ def select_articles_from_file(articles, file_name):
 
 def process_articles(
         key,
-        articles_path = "../INPUT_article_contents",
+        articles_path = "../article_contents",
         do_screening = False,
         do_coding = False,
         do_summarising = False,
-        process_only_selected = True,
+        process_only_selected = False,
         stop_after = 50,
         count_type = "any",
         article_order_random_seed = 420,
@@ -635,16 +614,20 @@ def process_articles(
         article_exclusion_list = "none",
         output_picture_tags = False,
         coding_output_filename = "unset",
+        html_output_filename = "unset",
         config_file = "none"
     ):
     if config_file != "none":
-        articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename = load_config(config_file )
+        articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename = load_config(config_file )
     if coding_output_filename == "unset":
         coding_output_filename = f"coding_output_{timestamp}.tsv"
+    if html_output_filename == "unset":
+        coding_output_filename = f"html_output_{timestamp}.tsv"
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
     exclusion_list = []
+    ids_included_in_batch = []
     prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
     match article_selection:
         case "random":
@@ -666,10 +649,11 @@ def process_articles(
         if process_only_selected and not article["selected_for_processing"]: continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising)
         if processing_successful:
+            ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
-                    output_article(article, output_article_full, output_article_summarised, output_picture_tags )
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags )
                 if do_screening or do_coding:
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
@@ -679,8 +663,26 @@ def process_articles(
             if number_completed >= stop_after:
                 print( f"Ending because processed {number_completed} articles." )
                 break
+        print("here")
+    with open( f"output_folders/batch_ran/batch_{timestamp}.txt", 'w', encoding='utf-8') as f:
+        f.write('\n'.join(ids_included_in_batch))
+
+#if __name__ == "__main__":
+#    with open('key.txt', 'r') as file:
+#        file_api_key = file.read().strip()
+#    process_articles("config.json", file_api_key)
 
 if __name__ == "__main__":
-    with open('key.txt', 'r') as file:
-        file_api_key = file.read().strip()
-    process_articles("config.json", file_api_key)
+    process_articles(
+        articles_path = "article_contents",
+        count_type = "pass_screening",
+        stop_after = 5,
+        article_order_random_seed = 427,
+        do_screening = True,
+        do_summarising = True,
+        output_article_summarised = True,
+        output_only_articles_passing_screening = True,
+        coding_output_filename = "batch4_llm_screening.tsv",
+        html_output_filename = "batch4_html_output.html",
+        article_exclusion_list = ["coding_batches/batch2/batch2_random_selection.txt", "coding_batches/batch3/batch3_random_selection.txt"]
+    )
