@@ -664,8 +664,8 @@ def process_articles(
                 print( f"Ending because processed {number_completed} articles." )
                 break
         print("here")
-    with open( f"output_folders/batch_ran/batch_{timestamp}.txt", 'w', encoding='utf-8') as f:
-        f.write('\n'.join(ids_included_in_batch))
+#    with open( f"output_folders/batch_ran/batch_{timestamp}.txt", 'w', encoding='utf-8') as f:
+#        f.write('\n'.join(ids_included_in_batch))
 
 #if __name__ == "__main__":
 #    with open('key.txt', 'r') as file:
