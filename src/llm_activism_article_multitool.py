@@ -663,7 +663,6 @@ def process_articles(
             if number_completed >= stop_after:
                 print( f"Ending because processed {number_completed} articles." )
                 break
-        print("here")
 #    with open( f"output_folders/batch_ran/batch_{timestamp}.txt", 'w', encoding='utf-8') as f:
 #        f.write('\n'.join(ids_included_in_batch))
 
