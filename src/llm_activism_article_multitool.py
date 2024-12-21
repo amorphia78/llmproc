@@ -645,7 +645,7 @@ def process_articles(
     #else:
     #    articles_to_loop = articles.values()
     #for article in articles_to_loop:
-    for article in articles:
+    for article in articles.values():
         sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
@@ -674,18 +674,18 @@ def process_articles(
 #    process_articles("config.json", file_api_key)
 
 if __name__ == "__main__":
-    print( random() )
     process_articles(
-        articles_path = "article_contents",
-        count_type = "pass_screening",
-        stop_after = 5,
+        articles_path="article_contents",
+        count_type="pass_screening",
+        stop_after=2,
         article_selection="random",
-        article_order_random_seed = 427,
-        do_screening = True,
-        do_summarising = True,
-        output_article_summarised = True,
-        output_only_articles_passing_screening = True,
-        coding_output_filename = "batch4_llm_screening.tsv",
-        html_output_filename = "batch4_html_output.html",
-        article_exclusion_list = ["coding_batches/batch2/batch2_random_selection.txt", "coding_batches/batch3/batch3_random_selection.txt"]
+        article_order_random_seed=427,
+        do_screening=True,
+        do_summarising=True,
+        output_article_summarised=True,
+        output_only_articles_passing_screening=True,
+        coding_output_filename="batch4_llm_screening.tsv",
+        html_output_filename="batch4_html_output.html",
+        article_exclusion_list=["coding_batches/batch2/batch2_random_selection.txt",
+                                "coding_batches/batch3/batch3_random_selection.txt"]
     )
