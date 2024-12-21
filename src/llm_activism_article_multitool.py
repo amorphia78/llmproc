@@ -631,6 +631,7 @@ def process_articles(
     prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
     match article_selection:
         case "random":
+            random.seed(article_order_random_seed)
             select_random_articles(articles)
         case _:
             select_articles_from_file(articles, article_selection)
@@ -638,12 +639,13 @@ def process_articles(
     if do_screening or do_coding: output_coding_headers( coding_output_filename, do_screening, do_coding )
     print( "Processing" )
     number_completed = 0
-    if article_selection == "random":
-        random.seed(article_order_random_seed)
-        articles_to_loop = random.sample(list(articles.values()), len(articles))
-    else:
-        articles_to_loop = articles.values()
-    for article in articles_to_loop:
+    #if article_selection == "random":
+    #    random.seed(article_order_random_seed)
+    #    articles_to_loop = random.sample(list(articles.values()), len(articles))
+    #else:
+    #    articles_to_loop = articles.values()
+    #for article in articles_to_loop:
+    for article in articles:
         sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
@@ -672,10 +674,12 @@ def process_articles(
 #    process_articles("config.json", file_api_key)
 
 if __name__ == "__main__":
+    print( random() )
     process_articles(
         articles_path = "article_contents",
         count_type = "pass_screening",
         stop_after = 5,
+        article_selection="random",
         article_order_random_seed = 427,
         do_screening = True,
         do_summarising = True,
