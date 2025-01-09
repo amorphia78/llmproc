@@ -9,6 +9,22 @@ import random
 import sys
 import llmproc_core as llm
 import llm_activism_article_prompts_and_strings as pas
+import atexit
+
+debug_log = False
+debug_file_handle = open("debug_log.txt", 'w', encoding='utf-8')
+
+def cleanup():
+    global debug_file_handle
+    if debug_file_handle is not None:
+        debug_file_handle.close()
+        debug_file_handle = None
+atexit.register(cleanup)
+
+def write_debug(message: str) -> None:
+    time_now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    debug_file_handle.write(f"{time_now} {message}\n\n")
+    debug_file_handle.flush()
 
 timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -189,6 +205,8 @@ def owe_focussed(article):
     yes_or_no = llm.send_prompt( prompt, "processor" )
     if yes_or_no != "Yes" and yes_or_no != "No":
         raise ValueError("Bad response for owe check.")
+    if debug_log:
+        write_debug(f"owe_focussed() for {article['id']}\nPROMPT: {prompt}\n\nRESPONSE: {yes_or_no}\n")
     return yes_or_no
 
 def owe_focussed_via_cache(article):
@@ -219,6 +237,8 @@ def full_screening(article):
     prompt = pas.prompt_full_screening_intro + title_and_body + pas.prompt_full_screening_end
     prefill = "\t".join(pas.screening_code_names)
     response = llm.send_prompt( prompt, "processor", prefill )
+    if debug_log:
+        write_debug(f"full_screening() for {article['id']}\nPROMPT: {prompt}\n\nRESPONSE: {response}\n")
     return parse_and_validate_screening_response(response)
 
 def full_screening_via_cache(article):
@@ -597,6 +617,8 @@ def select_articles_from_file(articles, file_name):
 
 def process_articles(
         key,
+        debug_screening_process = False,
+        config_file="none",
         articles_path = "../article_contents",
         do_screening = False,
         do_coding = False,
@@ -614,8 +636,7 @@ def process_articles(
         article_exclusion_list = "none",
         output_picture_tags = False,
         coding_output_filename = "unset",
-        html_output_filename = "unset",
-        config_file = "none"
+        html_output_filename = "unset"
     ):
     if config_file != "none":
         articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename = load_config(config_file )
@@ -623,6 +644,10 @@ def process_articles(
         coding_output_filename = f"coding_output_{timestamp}.tsv"
     if html_output_filename == "unset":
         coding_output_filename = f"html_output_{timestamp}.tsv"
+    if debug_screening_process:
+        global debug_log
+        debug_log = True
+        llm.no_cache = True
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
@@ -675,15 +700,16 @@ def process_articles(
 
 if __name__ == "__main__":
     process_articles(
+        debug_screening_process=True,
         articles_path="article_contents",
         count_type="pass_screening",
-        stop_after=2,
+        stop_after=1,
         article_selection="random",
         article_order_random_seed=427,
         do_screening=True,
         do_summarising=True,
         output_article_summarised=True,
-        output_only_articles_passing_screening=True,
+        output_only_articles_passing_screening=False,
         coding_output_filename="batch4_llm_screening.tsv",
         html_output_filename="batch4_html_output.html",
         article_exclusion_list=["coding_batches/batch2/batch2_random_selection.txt",

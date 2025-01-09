@@ -4,6 +4,7 @@ import json
 import hashlib
 
 client = None
+no_cache = False
 
 def load_client(api_key: str | None = None) -> anthropic.Anthropic:
     global client
@@ -73,7 +74,7 @@ def process_with_cache(process_func, article):
     cache_dir = f"llm_caches/{process_func.__name__}"
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = f"{cache_dir}/{article['id']}.json"
-    if os.path.exists(cache_file):
+    if os.path.exists(cache_file) and not no_cache:
         print(f"{process_func.__name__} for article {article['id']} (retrieving cache)")
         with open(cache_file, 'r', encoding='utf-8') as f:
             cached_data = json.load(f)
