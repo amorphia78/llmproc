@@ -654,26 +654,25 @@ def process_articles(
     exclusion_list = []
     ids_included_in_batch = []
     prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
-    match article_selection:
-        case "random":
-            random.seed(article_order_random_seed)
-            select_random_articles(articles)
-        case _:
-            select_articles_from_file(articles, article_selection)
+    if do_screening or do_coding: output_coding_headers(coding_output_filename, do_screening, do_coding)
     if article_exclusion_list != "none": exclusion_list = assemble_exclusion_list(article_exclusion_list)
-    if do_screening or do_coding: output_coding_headers( coding_output_filename, do_screening, do_coding )
+    if article_selection == "random":
+        random.seed(article_order_random_seed)
+        articles_to_loop = random.sample(list(articles.values()), len(articles))
+    else:
+        select_articles_from_file(articles, article_selection)
+        articles_to_loop = articles.values()
+        if not process_only_selected:
+            sys.exit("It doesn't make sense to specify an article selection with article_selection but also allow process_only_selected to be False.")
     print( "Processing" )
     number_completed = 0
-    #if article_selection == "random":
-    #    random.seed(article_order_random_seed)
-    #    articles_to_loop = random.sample(list(articles.values()), len(articles))
-    #else:
-    #    articles_to_loop = articles.values()
-    #for article in articles_to_loop:
-    for article in articles.values():
+    for article in articles_to_loop:
         sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
+        if article_has_image_issues(article):
+            warnings.warn(f"Article would have been processed except it has image issues: {article['id']}", UserWarning)
+            continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
