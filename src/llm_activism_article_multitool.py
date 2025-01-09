@@ -338,6 +338,8 @@ def prepare_articles(articles):
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
 def process_article(article, do_screening = True, do_coding = False, do_summary = False ):
+    if article_has_image_issues(article):
+        warnings.warn(f"Article being processed has image issues: {article['id']}", UserWarning)
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     if do_screening:
         article["owe_focussed"] = owe_focussed_via_cache(article)
@@ -545,7 +547,6 @@ def output_coding_headers(file_name, do_screening, do_coding):
     screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "PASSES_SCREENING"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
-        print(f"{file_name} HERE")
         f.write("\t".join( [*base_headers, *screening_headers, *coding_headers] ) + "\n")
 
 def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
@@ -656,7 +657,6 @@ def process_articles(
     ids_included_in_batch = []
     prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
     if do_screening or do_coding:
-        print(f"OUTPUTTING HEADERS {coding_output_filename}\n")
         output_coding_headers(coding_output_filename, do_screening, do_coding)
     if article_exclusion_list != "none": exclusion_list = assemble_exclusion_list(article_exclusion_list)
     if article_selection == "random":
@@ -673,9 +673,6 @@ def process_articles(
         sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
-        if article_has_image_issues(article):
-            warnings.warn(f"Article would have been processed except it has image issues: {article['id']}", UserWarning)
-            continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
