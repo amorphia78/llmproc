@@ -545,6 +545,7 @@ def output_coding_headers(file_name, do_screening, do_coding):
     screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "PASSES_SCREENING"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
+        print(f"{file_name} HERE")
         f.write("\t".join( [*base_headers, *screening_headers, *coding_headers] ) + "\n")
 
 def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
@@ -643,7 +644,7 @@ def process_articles(
     if coding_output_filename == "unset":
         coding_output_filename = f"coding_output_{timestamp}.tsv"
     if html_output_filename == "unset":
-        coding_output_filename = f"html_output_{timestamp}.tsv"
+        html_output_filename = f"html_output_{timestamp}.tsv"
     if debug_screening_process:
         global debug_log
         debug_log = True
@@ -654,7 +655,9 @@ def process_articles(
     exclusion_list = []
     ids_included_in_batch = []
     prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
-    if do_screening or do_coding: output_coding_headers(coding_output_filename, do_screening, do_coding)
+    if do_screening or do_coding:
+        print(f"OUTPUTTING HEADERS {coding_output_filename}\n")
+        output_coding_headers(coding_output_filename, do_screening, do_coding)
     if article_exclusion_list != "none": exclusion_list = assemble_exclusion_list(article_exclusion_list)
     if article_selection == "random":
         random.seed(article_order_random_seed)
