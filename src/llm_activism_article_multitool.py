@@ -658,6 +658,8 @@ def process_articles(
         global debug_log
         debug_log = True
         llm.no_cache = True
+    else:
+        llm.no_cache = False
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes

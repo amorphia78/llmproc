@@ -74,6 +74,7 @@ def process_with_cache(process_func, article):
     cache_dir = f"llm_caches/{process_func.__name__}"
     os.makedirs(cache_dir, exist_ok=True)
     cache_file = f"{cache_dir}/{article['id']}.json"
+    print( f"DEBUG {os.path.exists(cache_file)} and not {no_cache}")
     if os.path.exists(cache_file) and not no_cache:
         print(f"{process_func.__name__} for article {article['id']} (retrieving cache)")
         with open(cache_file, 'r', encoding='utf-8') as f:
