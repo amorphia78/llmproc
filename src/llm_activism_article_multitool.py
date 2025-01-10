@@ -337,16 +337,22 @@ def prepare_articles(articles):
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
-def process_article(article, do_screening = True, do_coding = False, do_summary = False ):
+def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True):
     if article_has_image_issues(article):
         warnings.warn(f"Article being processed has image issues: {article['id']}", UserWarning)
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     if do_screening:
-        article["owe_focussed"] = owe_focussed_via_cache(article)
-        print("OWE is " + article["owe_focussed"])
         article["screening_codes"] = full_screening_via_cache(article)
         s_c = article["screening_codes"]
-        if article["owe_focussed"] == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
+        if use_owe_focussed:
+            article["owe_focussed"] = owe_focussed_via_cache(article)
+            print("OWE FOCUSSED is " + article["owe_focussed"])
+            owe = article["owe_focussed"]
+        else:
+            article["owe_focussed"] = "Unused"
+            print("OWE is " + s_c["OWE"])
+            owe = s_c["OWE"]
+        if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
             article["passes_screening"] = "No"
         else:
             article["passes_screening"] = "Yes"
@@ -638,9 +644,11 @@ def process_articles(
         article_exclusion_list = "none",
         output_picture_tags = False,
         coding_output_filename = "unset",
-        html_output_filename = "unset"
+        html_output_filename = "unset",
+        use_owe_focussed = True,
     ):
     if config_file != "none":
+        warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
         articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename = load_config(config_file )
     if coding_output_filename == "unset":
         coding_output_filename = f"coding_output_{timestamp}.tsv"
@@ -673,7 +681,7 @@ def process_articles(
         sys.stdout.flush()
         if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising)
+        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
