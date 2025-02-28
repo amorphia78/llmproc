@@ -230,16 +230,17 @@ def parse_articles_file(filename):
     content = open(filename, 'r', encoding='utf-8').read()
     return parse_articles_string(content)
 
-class InvalidTagNestingError(Exception):
+class InvalidTagNestingErrorBatch3Style(Exception):
     """Custom exception for invalid tag nesting"""
     pass
 
 def ensure_tags_have_spaces(content):
-    for tag in ['#MS', '#ME', '#DS', '#DE', '#PH', '#CS', '#CE']:
+    """Ensure all tags are properly separated by spaces."""
+    for tag in ['#GS', '#GE', '#PS', '#PE', '#MS', '#ME', '#AS', '#AE', '#NS', '#NE', '#PH', '#CS', '#CE']:
         content = content.replace(tag, f' {tag} ')
     return content
 
-def analyze_field_tags(content):
+def analyze_content_for_batch_3_style(content):
     stats = {
         'total_words': 0,
         'messaging_words': 0,
@@ -269,19 +270,19 @@ def analyze_field_tags(content):
         if word in valid_tags:
             if word == '#MS':
                 if messaging_depth > 0:
-                    raise InvalidTagNestingError("Nested messaging blocks are not allowed")
+                    raise InvalidTagNestingErrorBatch3Style("Nested messaging blocks are not allowed")
                 messaging_depth += 1
             elif word == '#ME':
                 if messaging_depth == 0:
-                    raise InvalidTagNestingError("Found #ME without matching #MS")
+                    raise InvalidTagNestingErrorBatch3Style("Found #ME without matching #MS")
                 messaging_depth -= 1
             elif word == '#DS':
                 if disruption_depth > 0:
-                    raise InvalidTagNestingError("Nested disruption blocks are not allowed")
+                    raise InvalidTagNestingErrorBatch3Style("Nested disruption blocks are not allowed")
                 disruption_depth += 1
             elif word == '#DE':
                 if disruption_depth == 0:
-                    raise InvalidTagNestingError("Found #DE without matching #DS")
+                    raise InvalidTagNestingErrorBatch3Style("Found #DE without matching #DS")
                 disruption_depth -= 1
             elif word == '#PH':
                 stats['total_pictures'] += 1
@@ -297,20 +298,119 @@ def analyze_field_tags(content):
                 stats['disruption_words'] += 1
         i += 1
     if messaging_depth > 0:
-        raise InvalidTagNestingError("Unclosed messaging block at end of content")
+        raise InvalidTagNestingErrorBatch3Style("Unclosed messaging block at end of content")
     if disruption_depth > 0:
-        raise InvalidTagNestingError("Unclosed disruption block at end of content")
+        raise InvalidTagNestingErrorBatch3Style("Unclosed disruption block at end of content")
     return stats
+
+
+class InvalidTagNestingError(Exception):
+    """Custom exception for invalid tag nesting"""
+
+    def __init__(self, message, word_list=None, error_position=None):
+        super().__init__(message)
+        self.word_list = word_list
+        self.error_position = error_position
+
+    def get_context(self):
+        if self.word_list is None or self.error_position is None:
+            return None
+        start = max(0, self.error_position - 10)
+        end = min(len(self.word_list), self.error_position + 11)
+        return self.word_list[start:end]
+
+
+def analyze_content(content):
+    """Analyze content with multiple block types."""
+    # Define block types and their tags
+    block_types = {
+        'general_disruption': {'start': '#GS', 'end': '#GE'},
+        'personal_effects': {'start': '#PS', 'end': '#PE'},
+        'protester_messaging': {'start': '#MS', 'end': '#ME'},
+        'approval': {'start': '#AS', 'end': '#AE'},
+        'negative_criticism': {'start': '#NS', 'end': '#NE'}
+    }
+
+    # Special tags that don't define blocks
+    special_tags = {'#PH', '#CS', '#CE'}
+
+    # Initialize statistics
+    stats = {'total_words': 0, 'total_pictures': 0}
+    for block_type in block_types:
+        stats[f'{block_type}_words'] = 0
+        stats[f'{block_type}_pictures'] = 0
+
+    # Prepare content
+    content = ensure_tags_have_spaces(content)
+    words = content.split()
+
+    # Track depth of each block type
+    block_depths = {block_type: 0 for block_type in block_types}
+
+    # Process words
+    for i, word in enumerate(words):
+        if word in special_tags:
+            if word == '#PH':
+                stats['total_pictures'] += 1
+                for block_type, depth in block_depths.items():
+                    if depth > 0:
+                        stats[f'{block_type}_pictures'] += 1
+            continue
+
+        # Check if it's a block tag
+        for block_type, tags in block_types.items():
+            if word == tags['start']:
+                if block_depths[block_type] > 0:
+                    raise InvalidTagNestingError(
+                        f"Nested {block_type} blocks are not allowed",
+                        words,
+                        i
+                    )
+                block_depths[block_type] += 1
+                break
+            elif word == tags['end']:
+                if block_depths[block_type] == 0:
+                    raise InvalidTagNestingError(
+                        f"Found end tag without matching start tag for {block_type}",
+                        words,
+                        i
+                    )
+                block_depths[block_type] -= 1
+                break
+        else:
+            # Word is not a tag, count it
+            if any(block_depths.values()):  # If we're inside any block
+                stats['total_words'] += 1
+                for block_type, depth in block_depths.items():
+                    if depth > 0:
+                        stats[f'{block_type}_words'] += 1
+
+    # Check for unclosed blocks
+    for block_type, depth in block_depths.items():
+        if depth > 0:
+            raise InvalidTagNestingError(
+                f"Unclosed {block_type} block at end of content",
+                words,
+                len(words) - 1
+            )
+
+    return stats
+
+
 
 def count_words_in_tagged_blocks(article):
     for field in ['title', 'subtitle', 'main_content']:
         if field in article and article[field]:
             try:
-                article[field + '_analysis'] = analyze_field_tags(article[field])
+                article[field + '_analysis'] = analyze_content(article[field])
             except InvalidTagNestingError as e:
                 warnings.warn(f"Error in tags for article {article["id"]}.")
                 article[field + '_analysis'] = f"Error in {field}: {str(e)}"
                 article["tag_error"] = "present"
+
+                context = e.get_context()
+                print(f"Error: {str(e)}")
+                print(f"Context: {' '.join(context)}")
 
 def move_tags_to_main_fields(articles, which_go):
     output_path = f"tmp_{timestamp}_{which_go}.txt"
@@ -319,7 +419,7 @@ def move_tags_to_main_fields(articles, which_go):
             f.write(article.get(which_go, f"ERROR: tagging {which_go} not found")+"\n")
     return parse_articles_file(output_path)
 
-def write_word_counts_file(articles, append_file=""):
+def write_word_counts_file_for_batch_3_style(articles, append_file=""):
     output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_{append_file}.tsv'
     stat_fields = [
         'total_words', 'messaging_words', 'disruption_words',
@@ -330,6 +430,40 @@ def write_word_counts_file(articles, append_file=""):
     for content_type in content_types:
         for stat in stat_fields:
             header.append(f'{content_type}_{stat}')
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write('\t'.join(header) + '\n')
+        for article_id, article in articles.items():
+            row = [article_id]
+            for content_type in content_types:
+                analysis_key = f'{content_type}_analysis'
+                analysis_dict = article.get(analysis_key, {})
+                if isinstance(analysis_dict, dict):
+                    for stat in stat_fields:
+                        row.append(str(analysis_dict.get(stat, 0)))
+                else:
+                    row.extend(['0'] * len(stat_fields))
+            f.write('\t'.join(row) + '\n')
+
+
+def write_word_counts_file(articles, append_file=""):
+    output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_{append_file}.tsv'
+
+    # Define the new stat fields based on our block types
+    stat_fields = [
+        'total_words', 'total_pictures',
+        'general_disruption_words', 'general_disruption_pictures',
+        'personal_effects_words', 'personal_effects_pictures',
+        'protester_messaging_words', 'protester_messaging_pictures',
+        'approval_words', 'approval_pictures',
+        'negative_criticism_words', 'negative_criticism_pictures'
+    ]
+
+    content_types = ['title', 'subtitle', 'main_content']
+    header = ['id']
+    for content_type in content_types:
+        for stat in stat_fields:
+            header.append(f'{content_type}_{stat}')
+
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\t'.join(header) + '\n')
         for article_id, article in articles.items():
@@ -364,6 +498,15 @@ def count_vanessa_batch_3():
         json.dump(articles_for_counting, f, indent=4)
     write_word_counts_file(articles_for_counting, "assistant")
 
+def count_batch_5_example():
+    articles_for_counting = parse_articles_file('batch_5_example_for_testing_word_counts.txt')
+    for article in articles_for_counting.values():
+        count_words_in_tagged_blocks(article)
+    #with open('human_coded_content_blocks.json', 'w') as f:
+    #    json.dump(articles_for_counting, f, indent=4)
+    write_word_counts_file(articles_for_counting, "assistant")
+
+
 def llm_code_and_count():
     articles_for_coding = parse_articles_file('formatted_articles_20241118_195911 (for coding).txt')
     #articles_for_coding = dict(list(articles_for_coding.items())[7:9])
@@ -389,8 +532,8 @@ def llm_code_and_count():
 
 def main():
     #llm_code_and_count()
-    count_vanessa_batch_3()
+    #count_vanessa_batch_3()
+    count_batch_5_example()
 
 if __name__ == "__main__":
     main()
-
