@@ -584,21 +584,36 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False):
+    print("HERE!!!!!!!!!!!!!!!! ")
+    print(output_individually)
+    if output_individually:
+        os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
         print(f"Outputting formatted (original), ID: {article['id']}; word count: {article['text_word_count']}")
-        with open(filename, 'a', encoding='utf-8') as f:
-            f.write(formatted_article_output(article, False ))
+        formatted_output = formatted_article_output(article, False)
+        if output_individually:
+            individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}_original.html"
+            with open(individual_filename, 'w', encoding='utf-8') as f:
+                f.write(formatted_output)
+        else:
+            with open(filename, 'a', encoding='utf-8') as f:
+                f.write(formatted_output)
     if output_article_summarised:
         if article["summarised"]:
             print(f"Outputting formatted (summarised), ID: {article['id']}")
-            html_content = formatted_article_output(article, True, output_picture_tags )
+            html_content = formatted_article_output(article, True, output_picture_tags)
         else:
             print(f"Outputting formatted (original because no summary), ID: {article['id']}")
-            html_content = formatted_article_output(article, False, output_picture_tags )
-            #html_content = "<html><body>No summary version of article available.</body></html>"
-        with open(filename, 'a', encoding='utf-8') as f:
-            f.write( html_content )
+            html_content = formatted_article_output(article, False, output_picture_tags)
+        if output_individually:
+            suffix = "_summary" if article["summarised"] else "_original"
+            individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}{suffix}.html"
+            with open(individual_filename, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+        else:
+            with open(filename, 'a', encoding='utf-8') as f:
+                f.write(html_content)
 
 def output_word_counts(article):
     filename = f"output_folders/article_word_count_output/counts_{timestamp}.tsv"
@@ -638,6 +653,7 @@ def process_articles(
         output_article_full = False,
         output_article_summarised = False,
         output_article_summary_process = False,
+        output_articles_individually = False,
         output_only_articles_passing_screening = False,
         output_detailed_word_counts = False,
         article_selection = "random",
@@ -645,7 +661,7 @@ def process_articles(
         output_picture_tags = False,
         coding_output_filename = "unset",
         html_output_filename = "unset",
-        use_owe_focussed = True,
+        use_owe_focussed = True
     ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -689,7 +705,7 @@ def process_articles(
             if output_detailed_word_counts: output_word_counts(article)
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags )
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually )
                 if do_screening or do_coding:
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
