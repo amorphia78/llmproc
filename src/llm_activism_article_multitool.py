@@ -585,8 +585,6 @@ def output_summary_process(article):
         f.write(summary_process_output)
 
 def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False):
-    print("HERE!!!!!!!!!!!!!!!! ")
-    print(output_individually)
     if output_individually:
         os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
@@ -596,9 +594,8 @@ def output_article(filename, article, output_article_full, output_article_summar
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}_original.html"
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_output)
-        else:
-            with open(filename, 'a', encoding='utf-8') as f:
-                f.write(formatted_output)
+        with open(filename, 'a', encoding='utf-8') as f:
+            f.write(formatted_output)
     if output_article_summarised:
         if article["summarised"]:
             print(f"Outputting formatted (summarised), ID: {article['id']}")
@@ -611,9 +608,8 @@ def output_article(filename, article, output_article_full, output_article_summar
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}{suffix}.html"
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(html_content)
-        else:
-            with open(filename, 'a', encoding='utf-8') as f:
-                f.write(html_content)
+        with open(filename, 'a', encoding='utf-8') as f:
+            f.write(html_content)
 
 def output_word_counts(article):
     filename = f"output_folders/article_word_count_output/counts_{timestamp}.tsv"
