@@ -1,3 +1,6 @@
+import warnings
+warnings.warn("Using the version of the OWE prompts that does not mention tax and school strikes. We may want to update that. Also think about animal rights: https://docs.google.com/document/d/1vlhulnQNw0ANMgdldv6uZTnFujewdkNnn9NQraw5or8/edit?tab=t.0", UserWarning)
+
 screening_code_names = ["OWE", "SPURIOUS", "SPECIFIC", "LETTER", "ROUNDUP", "NON-UK EDITION", "NON-ENGLISH", "VIDEO", "NON-DISRUPTIVE OWE"]
 
 rating_code_names_b2 = ["Number of protestors", "Target category", "Activity being deliberately disrupted", "Activity being accidentally disrupted", "Nature of disruption", "Visual appearance costumes", "Visual appearance not ordinary", "Demographics", "Demand", "Location", "Acceptance of protest", "Believe in general acceptability", "Believe in general unacceptability", "Protester demographic diversity", "Radicalness of demand", "Level of disruption", "Otherness", "Political slant", "Issue bundling", "Portrayal", "Attention to message", "Attention to disruption" ]

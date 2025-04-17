@@ -154,27 +154,27 @@ def sanitise_ids(articles):
     # Create a copy to avoid modifying the original
     sanitized_articles = articles.copy()
     seen_ids = set()
-    # Track original ID to sanitized ID mapping for error message
-    id_mapping = {}
-    # First pass: sanitize all IDs and check for duplicates
-    for article in sanitized_articles.values():
+    duplicates_found = False
+    # Sanitize IDs and remove duplicates in a single pass
+    article_ids_to_remove = []
+    for article_id, article in list(sanitized_articles.items()):
         if article.get("id") is None: continue
         original_id = article['id']
         sanitized_id = sanitise_name(original_id)
         if sanitized_id in seen_ids:
-            # Find all original IDs that map to this sanitized ID
-            conflicting_ids = [orig for orig, san in id_mapping.items()
-                               if san == sanitized_id]
-            conflicting_ids.append(original_id)
-            warnings.warn(
-                f"Duplicate sanitized ID '{sanitized_id}' generated from original IDs: {', '.join(str(id_code) for id_code in conflicting_ids)}", UserWarning
-            )
-        seen_ids.add(sanitized_id)
-        id_mapping[original_id] = sanitized_id
-    # Second pass: update the IDs
-    for article in sanitized_articles.values():
-        if article.get("id") is None: continue
-        article['id'] = sanitise_name(article['id'])
+            # Remove this article as it has a duplicate ID
+            article_ids_to_remove.append(article_id)
+            duplicates_found = True
+        else:
+            seen_ids.add(sanitized_id)
+            # Update the ID immediately
+            article['id'] = sanitized_id
+    # Remove the articles with duplicate IDs
+    for article_id in article_ids_to_remove:
+        del sanitized_articles[article_id]
+    # Warn once if duplicates were found and removed
+    if duplicates_found:
+        warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
 def summarise_article(article):
@@ -260,6 +260,7 @@ def code_article(article, version):
 
 def format_html_body_text(text,breaks_number="single"):
     breaks = "<br>" if breaks_number == "single" else "<br><br>"
+    text = text.replace('\n\n', '\n')
     processed_text = html.escape(text).replace('\n', breaks).replace('\\"', '&quot;')
     return f"<p>{processed_text}</p>"
 
@@ -308,19 +309,26 @@ def compare_summary_and_resummary_matches( article ):
     resummary_match = tsv_extract_column(article["resummary_comparison"], 4)
     return tsv_column_bind(questions, tsv_column_bind(original_answers, tsv_column_bind(summary_answers, tsv_column_bind(summary_match, tsv_column_bind(resummary_answers,resummary_match)))))
 
+#countNoIDs = 0
+
 def prepare_articles(articles):
+    #global countNoIDs
     for url, article in articles.items():
         article["url"] = url
         article["passes_screening"] = None
         article["summarised"] = False
         if "id" not in article:
+            #countNoIDs += 1
+            #print("Articles with no ID: " + str(countNoIDs))
             pattern = r'article-(\d+)\/([a-zA-Z0-9]+)-([a-zA-Z0-9]+)-([a-zA-Z0-9]+)'
             match = re.search(pattern, url)
-            if not match:
-                raise ValueError("Unable to create ID for article with missing ID: " + url)
-            id_code = match.group(1) + '-' + '-'.join(match.group(2, 3, 4))
-            warnings.warn( f"Article '{article['url']}' has no ID, substituting {id_code} which will only work well for certain Daily Mail articles", UserWarning)
-            article["id"] = id_code
+            if match:
+                id_code = match.group(1) + '-' + '-'.join(match.group(2, 3, 4))
+                article["id"] = id_code
+                warnings.warn( f"Article '{article['url']}' has no ID, substituting {id_code} which will only work well for certain Daily Mail articles", UserWarning)
+            else: #The reason there are two different methods for constructing IDs when they are missing is originally they could only be Daily Mail articles, and I made a method that worked for them. Then some non-Daily Mail ones turned up (in a new scrape) and I needed a new method that works for these ones, while keeping the old method for the ones it worked on, so we don't end up with two IDs for the same article
+                article["id"] = article["url"].split('://', 1)[1].replace('/', '_').replace(':', '_').replace('.','_').replace('?', '_').replace('&', '_')
+                #warnings.warn(f"Article '{article['url']}' has no ID, substituting {article["id"]}", UserWarning)
         if "source" not in article:
             article["source"] = "Daily-Mail"
             warnings.warn( f"Article '{article['id']}' has no source, assuming Daily Mail", UserWarning)
@@ -338,9 +346,12 @@ def prepare_articles(articles):
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
 def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True):
+    print(f"Processing {article['id']} word count " + str(article['text_word_count']))
+    #print("\n")
+    #print( article )
+    #print("\n")
     if article_has_image_issues(article):
         warnings.warn(f"Article being processed has image issues: {article['id']}", UserWarning)
-    print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     if do_screening:
         article["screening_codes"] = full_screening_via_cache(article)
         s_c = article["screening_codes"]
@@ -422,7 +433,7 @@ def generate_image_html_old(article, image_data): # This one can't cope with the
 def llm_describe_image(image_url):
     pass
 
-def generate_image_html(article, image_data, output_picture_tags):
+def generate_image_html_github_url(article, image_data, output_picture_tags):
     github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
     if type(image_data) is list:
         caption = image_data[0]
@@ -461,7 +472,46 @@ def generate_image_html(article, image_data, output_picture_tags):
     '''
     return image_html
 
-def formatted_article_output(article, output_summary = False, output_picture_tags = False ):
+def generate_image_html_outlet_url(article, image_data, output_picture_tags):
+    github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
+    if "url_large" in image_data:
+        image_path = image_data["url_large"]
+    elif "url" in image_data:
+        image_path = image_data["url"]
+    else:
+        warnings.warn(f"Image for {article['id']} has neither url_large nor url", UserWarning)
+        image_path = ""
+    local_name = image_data['local_name']
+    local_path = image_data['local_path']
+    github_fallback = github_image_root + local_path + "/" + local_name
+    caption = image_data['caption']
+    if output_picture_tags:
+        pic_tag = "#PH"
+        caption_start_tag = "#CS "
+        caption_end_tag = " #CE"
+        # image_description = llm.process_url_with_cache(llm_describe_image,image_path)
+    else:
+        pic_tag = ""
+        caption_start_tag = ""
+        caption_end_tag = ""
+    image_html_fallback_not_working = f'''
+        <figure width="100%">
+          {pic_tag}
+          <object data="{image_path}" type="image" width="100%">
+            <img src="{github_fallback}" alt="{caption}" width="100%">
+          </object>
+          {caption_start_tag}<figcaption align="center">{caption}</figcaption>{caption_end_tag}
+        </figure>
+        '''
+    image_html = f'''
+    <figure width="100%">
+      {pic_tag}<img src="{image_path}" alt="{caption}" width="100%">
+      {caption_start_tag}<figcaption align="center">{caption}</figcaption>{caption_end_tag}
+    </figure>
+    '''
+    return image_html
+
+def formatted_article_output(article, output_summary = False, output_picture_tags = False, suppress_id_in_html = False ):
     identity_code, source, title, subtitle, images = article["id"], article["source"], article["title"], article["subtitle"], article["image"]
     if not output_summary:
         body = article["text"]
@@ -469,16 +519,22 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
         body = article["summary"]
     image_strings = []
     if images:
-        image_strings = [generate_image_html(article, image, output_picture_tags) for image in images]
+        image_strings = [generate_image_html_outlet_url(article, image, output_picture_tags) for image in images]
         n_images = len(image_strings)
     else:
         n_images = 0
     if "scraped_image_missing" not in article:
         article["scraped_image_missing"] = False
     first_half, second_half = split_string_at_midpoint(body)
-    html_output = "<html><body><br><br><br>"
-    html_output += f"<h2>ID: {identity_code}</h2>"
-    html_output += f"<h2>Source: {source}</h2>"
+    html_output = "<html><body><br>"
+    if not suppress_id_in_html:
+        html_output += f"<h2>ID: {identity_code}</h2>"
+    else:
+        html_output += f"\n<!--Article ID: {identity_code}-->\n"
+    #html_output += f"<h2>Source: {source}</h2>"
+    html_output += f'''
+          <img src="https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/outlet_logos/{source}.png" alt="Outlet logo" width="25%">
+        '''
     if output_picture_tags:
         html_output += f"<h1>Title: {title}</h1>"
     else:
@@ -548,6 +604,46 @@ def select_random_articles(articles, seed=421):
         else:
             articles[key]['selected_for_processing'] = False
 
+def select_articles_weighted_random(articles, stop_after, seed=420):
+    random.seed(seed)
+    source_weights = {}
+    try:
+        with open("../sourceWeights.tsv", 'r') as f:
+            lines = f.readlines()
+            for line in lines[1:]:  # Skip header
+                parts = line.strip().split('\t')
+                if len(parts) == 2:
+                    source, weight = parts
+                    source_weights[source] = float(weight)
+    except FileNotFoundError:
+        warnings.warn("sourceWeights.tsv not found, using equal weights", UserWarning)
+        # Default to equal weights if file not found
+        sources = set(article["source"] for article in articles.values())
+        for source in sources:
+            source_weights[source] = 1.0 / len(sources)
+    # Group articles by source
+    articles_by_source = {}
+    for article in articles.values():
+        source = article.get("source", "Unknown")
+        if source not in articles_by_source:
+            articles_by_source[source] = []
+        articles_by_source[source].append(article)
+    # Calculate how many articles to select from each source
+    selections_by_source = {}
+    for source, weight in source_weights.items():
+        selections_by_source[source] = int(round(stop_after * weight))
+    # Select articles randomly from each source
+    selected_articles = []
+    for source, count in selections_by_source.items():
+        source_articles = articles_by_source.get(source, [])
+        # Debug info - add before the random.sample line
+        print(f"Source: {source}, Count to select: {count}, Available articles: {len(source_articles)}")
+        if count > 0:  # Only process sources that need articles
+            selected_articles.extend(random.sample(source_articles, count))
+    for article in articles.values():
+        article['selected_for_processing'] = article in selected_articles
+    return selected_articles
+
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
     screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "PASSES_SCREENING"] if do_screening else [])
@@ -584,7 +680,7 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False ):
     if output_individually:
         os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
@@ -599,10 +695,10 @@ def output_article(filename, article, output_article_full, output_article_summar
     if output_article_summarised:
         if article["summarised"]:
             print(f"Outputting formatted (summarised), ID: {article['id']}")
-            html_content = formatted_article_output(article, True, output_picture_tags)
+            html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html )
         else:
             print(f"Outputting formatted (original because no summary), ID: {article['id']}")
-            html_content = formatted_article_output(article, False, output_picture_tags)
+            html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html )
         if output_individually:
             suffix = "_summary" if article["summarised"] else "_original"
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}{suffix}.html"
@@ -633,6 +729,27 @@ def select_articles_from_file(articles, file_name):
             for key in articles:
                 if articles[key]['id'] == id_code:
                     articles[key]['selected_for_processing'] = True
+                    print("selected: " + id_code)
+
+def embargo_recent(articles, years=2):
+    current_date = datetime.datetime.now()
+    cutoff_date = current_date - datetime.timedelta(days=365 * years)
+    filtered_articles = {}
+    removed_count = 0
+    for url, article in articles.items():
+        if "date" in article:
+            try:
+                pub_date = datetime.datetime.fromisoformat(article["date"])
+                if pub_date < cutoff_date:
+                    filtered_articles[url] = article
+                else:
+                    removed_count += 1
+            except (ValueError, TypeError):
+                warnings.warn(f"Can't find a date in article at {url} that matches expected format, so possible embargo violation.", UserWarning)
+        else:
+            filtered_articles[url] = article
+    print(f"Embargo removed {removed_count} articles published within the last {years} years")
+    return filtered_articles
 
 def process_articles(
         key,
@@ -655,6 +772,7 @@ def process_articles(
         article_selection = "random",
         article_exclusion_list = "none",
         output_picture_tags = False,
+        suppress_id_in_html = False,
         coding_output_filename = "unset",
         html_output_filename = "unset",
         use_owe_focussed = True
@@ -675,15 +793,21 @@ def process_articles(
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
-    exclusion_list = []
+    prepare_articles(articles)  # tidying, e.g. dealing with missing ID codes
+    if article_exclusion_list != "none":
+        exclusion_list = assemble_exclusion_list(article_exclusion_list)
+        # Remove excluded articles from the dictionary
+        articles = {url: article for url, article in articles.items()
+            if article["id"] not in exclusion_list}
+    articles = embargo_recent(articles)
     ids_included_in_batch = []
-    prepare_articles(articles) # tidying, e.g. dealing with missing ID codes
     if do_screening or do_coding:
         output_coding_headers(coding_output_filename, do_screening, do_coding)
-    if article_exclusion_list != "none": exclusion_list = assemble_exclusion_list(article_exclusion_list)
     if article_selection == "random":
         random.seed(article_order_random_seed)
         articles_to_loop = random.sample(list(articles.values()), len(articles))
+    elif article_selection == "random_weighted":
+        articles_to_loop = select_articles_weighted_random(articles, stop_after, article_order_random_seed)
     else:
         select_articles_from_file(articles, article_selection)
         articles_to_loop = articles.values()
@@ -693,7 +817,6 @@ def process_articles(
     number_completed = 0
     for article in articles_to_loop:
         sys.stdout.flush()
-        if article["id"] in exclusion_list: continue
         if process_only_selected and not article["selected_for_processing"]: continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed)
         if processing_successful:
@@ -701,7 +824,7 @@ def process_articles(
             if output_detailed_word_counts: output_word_counts(article)
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually )
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html )
                 if do_screening or do_coding:
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
