@@ -586,12 +586,28 @@ def read_all_article_content(base_path):
         file_pattern = os.path.join(base_path, subdir, "*_parsed.json")
         json_files = glob.glob(file_pattern)
         for json_file in json_files:
+            filename = os.path.basename(json_file)
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})', filename)
+            if not date_match:
+                raise ValueError(f"File {filename} does not contain expected date format YYYY-MM-DD_YYYY-MM-DD")
+            file_dates = f"{date_match.group(1)}_{date_match.group(2)}"
             with open(json_file, 'r', encoding='utf-8') as input_file:
                 json_data = json.load(input_file)
                 filtered_data = {k: v for k, v in json_data.items() if k not in skip_list}
+                for article_key, article_data in filtered_data.items():
+                    article_data['file_dates'] = file_dates
                 all_json_data.update(filtered_data)
     print_and_flush(f"Read {len(all_json_data)} articles")
     return all_json_data
+
+def check_and_correct_dates(articles):
+    for article_key, article_data in articles.items():
+        if 'date' not in article_data or article_data['date'] is None or article_data['date'] == "":
+            file_dates = article_data['file_dates']
+            end_date = file_dates.split('_')[1]
+            article_data['date'] = end_date
+            print(f"Updated missing date for article {article_key} with {end_date}")
+    return articles
 
 def select_random_articles(articles, seed=421):
     random.seed(seed)
@@ -793,6 +809,7 @@ def process_articles(
     llm.load_client( key )
     articles = read_all_article_content(articles_path)
     articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
+    articles = check_and_correct_dates( articles )
     prepare_articles(articles)  # tidying, e.g. dealing with missing ID codes
     if article_exclusion_list != "none":
         exclusion_list = assemble_exclusion_list(article_exclusion_list)
