@@ -533,7 +533,7 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
         html_output += f"\n<!--Article ID: {identity_code}-->\n"
     #html_output += f"<h2>Source: {source}</h2>"
     html_output += f'''
-          <img src="https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/outlet_logos/{source}.png" alt="Outlet logo" width="25%">
+          <img src="https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/outlet_logos/{source}.png" alt="Outlet logo" style="display: block; margin: 0 auto; width: 25%; min-width: 150px;">
         '''
     if output_picture_tags:
         html_output += f"<h1>Title: {title}</h1>"
