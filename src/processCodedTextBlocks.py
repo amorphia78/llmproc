@@ -586,7 +586,7 @@ def write_word_counts_file_for_batch_3_style(articles, append_file=""):
 def write_word_counts_file(articles, append_file=""):
     output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_{append_file}.tsv'
 
-    # Define the new stat fields based on our block types
+    # Define the stat fields based on our block types
     stat_fields = [
         'total_words', 'total_pictures',
         'general_disruption_words', 'general_disruption_pictures',
@@ -601,6 +601,7 @@ def write_word_counts_file(articles, append_file=""):
     for content_type in content_types:
         for stat in stat_fields:
             header.append(f'{content_type}_{stat}')
+    header.append('tagging_error')  # Add the new column
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\t'.join(header) + '\n')
@@ -614,6 +615,8 @@ def write_word_counts_file(articles, append_file=""):
                         row.append(str(analysis_dict.get(stat, 0)))
                 else:
                     row.extend(['0'] * len(stat_fields))
+            # Add the tagging error status
+            row.append(article.get('tagging_error', 'no'))
             f.write('\t'.join(row) + '\n')
 
 def attach_tagging_error_to_original_article(article,tagged_article):
@@ -626,6 +629,32 @@ def attach_tagging_error_to_original_article(article,tagged_article):
             ]
             if isinstance(value, str) and "Error" in value
         )
+
+
+def apply_manual_corrections(articles_with_second_tagging, corrections_file_path):
+    articles_with_second_tagging_plus_corrections = articles_with_second_tagging.copy()
+    manually_corrected_articles = parse_articles_file(corrections_file_path)
+
+    # Replace articles that had tagging errors with corrected versions
+    for article_id, original_article in articles_with_second_tagging.items():
+        if original_article.get("tagging_error") == "yes":
+            # Look for a corrected version
+            if article_id in manually_corrected_articles:
+                print(f"Applying manual corrections for article: {article_id}")
+                corrected_article = manually_corrected_articles[article_id].copy()
+
+                # Recompute word counts for the corrected article
+                count_words_in_tagged_blocks(corrected_article)
+
+                # Set tagging error to "no" since it's been manually corrected
+                corrected_article["tagging_error"] = "no"
+
+                # Replace in the output dictionary
+                articles_with_second_tagging_plus_corrections[article_id] = corrected_article
+            else:
+                print(f"PROBLEM: No manual correction found for article with tagging error: {article_id}")
+
+    write_word_counts_file(articles_with_second_tagging_plus_corrections, "corrected")
 
 def count_vanessa_batch_3():
     articles_for_counting = parse_articles_file('Formatted_Articles_20241118_195911 (Vanessa_Coding_50_corrected).txt')
@@ -670,10 +699,9 @@ def llm_code_and_count_old():
     write_word_counts_file(articles_with_first_tagging, "first")
     write_word_counts_file(articles_with_second_tagging, "second")
 
-def llm_code_and_count():
-    articles_for_coding = parse_articles_from_html_directory("../coding_batches/batch6/individual_articles/specific_and_edited")
-    articles_for_coding = dict(list(articles_for_coding.items())[7:9])
 
+def llm_code_and_count():
+    articles_for_coding = parse_articles_from_html_directory( "../coding_batches/batch6/individual_articles/specific_and_edited")
     output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_LLMResponses.txt'
     with open(output_path, 'w', encoding='utf-8') as f:
         articles_with_first_tagging = {}
@@ -684,22 +712,45 @@ def llm_code_and_count():
             f.write("\nFIRST LLM OUTPUT\n" + article["tag_first_go"] + '\n')
             article_with_first_tagging = parse_article_from_tag_string(article["tag_first_go"])
             count_words_in_tagged_blocks(article_with_first_tagging)
-            articles_with_first_tagging[article_with_first_tagging["id"]] = article_with_first_tagging
-            if article_with_first_tagging.get("tag_error","") == "present":
-                f.write("\nTAGGING ERRORS DETECTED\n")
-                attach_tagging_error_to_original_article(article,article_with_first_tagging)
+
+            if article_with_first_tagging.get("tag_error", "") == "present":
+                f.write("\nFirst round: TAGGING ERROR(S) DETECTED\n")
+                attach_tagging_error_to_original_article(article, article_with_first_tagging)
+                # Add the specific error details to the log
+                if "tag_error_message" in article:
+                    f.write("Error details:\n" + article["tag_error_message"] + '\n')
+                article_with_first_tagging["tagging_error"] = "yes"
                 article["tag_second_go"] = llm.process_with_cache(llm_tag_second_go_after_error, article)
             else:
-                f.write("\nNo tagging errors detected\n")
+                f.write("\nFirst round: No tagging errors detected\n")
+                article_with_first_tagging["tagging_error"] = "no"
                 article["tag_second_go"] = llm.process_with_cache(llm_tag_second_go_no_error, article)
+
+            articles_with_first_tagging[article_with_first_tagging["id"]] = article_with_first_tagging
+
             f.write("\nSECOND LLM OUTPUT\n" + article["tag_second_go"] + '\n')
             article_with_second_tagging = parse_article_from_tag_string(article["tag_second_go"])
             count_words_in_tagged_blocks(article_with_second_tagging)
+
+            if article_with_second_tagging.get("tag_error", "") == "present":
+                f.write("\nSecond round: TAGGING ERROR(S) DETECTED\n")
+                attach_tagging_error_to_original_article(article, article_with_second_tagging)
+                # Add the specific error details to the log
+                if "tag_error_message" in article:
+                    f.write("Error details:\n" + article["tag_error_message"] + '\n')
+                article_with_second_tagging["tagging_error"] = "yes"
+            else:
+                f.write("\nSecond round: No tagging errors detected\n")
+                article_with_second_tagging["tagging_error"] = "no"
+
             articles_with_second_tagging[article_with_second_tagging["id"]] = article_with_second_tagging
+
         with open('llm_coded_content_blocks.json', 'w') as f:
             json.dump(articles_with_second_tagging, f, indent=4)
         write_word_counts_file(articles_with_first_tagging, "first")
         write_word_counts_file(articles_with_second_tagging, "second")
+        apply_manual_corrections(articles_with_second_tagging, "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt" )
+
 
 def main():
     llm_code_and_count()
