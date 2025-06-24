@@ -60,7 +60,7 @@ def send_prompt(prompt, llm_task_type="summariser", prefill="", prior_prompt="",
     else:
         system = llm_task_type
     response = client.messages.create(
-        model="claude-3-5-sonnet-20240620",
+        model="claude-sonnet-4-20250514",
         max_tokens=1000,
         temperature=0,
         system=system,
