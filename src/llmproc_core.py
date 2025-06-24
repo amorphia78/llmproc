@@ -59,11 +59,14 @@ def send_prompt(prompt, llm_task_type="summariser", prefill="", prior_prompt="",
         system = ""
     else:
         system = llm_task_type
+    #print(f"Messages: {messages}")
+    #for i, msg in enumerate(messages):
+    #    print(f"Message {i}: role='{msg.get('role')}', content='{msg.get('content')}'")
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1000,
         temperature=0,
-        system=system,
+#        system=system,
         messages=messages,
     ).content[0].text
     if prefill:
