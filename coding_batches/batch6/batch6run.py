@@ -1,12 +1,38 @@
 #This wouldn't actually run because you'd need an anthropic key specified
-#This was run again a second time but with output_only_articles_passing_screening=Truecd
+#This was run again a second time but with output_only_articles_passing_screening=True
+#And a third time, to get the unsummarised versions (see below)
 
 import llm_activism_article_multitool as multitool
 
 import os
 os.chdir("working_temp")
 
+# Uses articles now hard-coded instead of randomly selected (see below for original random selection)
+# Also, outputting non-summarised HTML
 if __name__ == "__main__":
+    multitool.process_articles(
+        key = anthropic_key,
+        use_owe_focussed=False,
+        articles_path="../article_contents",
+        count_type="pass_screening",
+        stop_after=150,
+        article_selection="../../coding_batches/batch6/batch6_random_selection.txt",
+        process_only_selected=True,
+        article_order_random_seed=430,
+        do_screening=True,
+        do_summarising=False,
+        output_article_full=True,
+        output_article_summarised=False,
+        output_only_articles_passing_screening=False,
+        output_articles_individually=True,
+        suppress_id_in_html=True,
+        coding_output_filename="batch6_llm_screening.tsv",
+        html_output_filename="batch6_html_output.html",
+        article_exclusion_list=["../../coding_batches/batch2/batch2_random_selection.txt",
+                                "../../coding_batches/batch3/batch3_random_selection.txt"]
+    )
+
+if __name__ == "NOT_MAIN": #Won't run now, but was originally run to randomly select batch 6 articles
     multitool.process_articles(
         key = anthropic_key,
         use_owe_focussed=False,
@@ -24,6 +50,6 @@ if __name__ == "__main__":
         suppress_id_in_html=True,
         coding_output_filename="batch6_llm_screening.tsv",
         html_output_filename="batch6_html_output.html",
-        article_exclusion_list=["../coding_batches/batch2/batch2_random_selection.txt",
-                                "../coding_batches/batch3/batch3_random_selection.txt"]
+        article_exclusion_list=["../../coding_batches/batch2/batch2_random_selection.txt",
+                                "../../coding_batches/batch3/batch3_random_selection.txt"]
     )
