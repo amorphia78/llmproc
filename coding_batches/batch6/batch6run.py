@@ -13,6 +13,7 @@ if __name__ == "__main__":
     multitool.process_articles(
         key = anthropic_key,
         use_owe_focussed=False,
+        use_owe_specific=True,
         articles_path="../article_contents",
         count_type="pass_screening",
         stop_after=150,

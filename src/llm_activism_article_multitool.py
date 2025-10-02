@@ -212,6 +212,20 @@ def owe_focussed(article):
 def owe_focussed_via_cache(article):
     return llm.process_with_cache( owe_focussed, article )
 
+def owe_specific(article):
+    title_and_body = get_title_and_subtitle_and_article(article, article["text"])
+    prompt = pas.prompt_owe_specific_intro + title_and_body + pas.prompt_owe_specific_end
+    yes_or_no = llm.send_prompt(prompt, "processor")
+    if yes_or_no != "Yes" and yes_or_no != "No":
+        print("yes_or_no was ", yes_or_no)
+        raise ValueError("Bad response for owe specific check.")
+    if debug_log:
+        write_debug(f"owe_specific() for {article['id']}\nPROMPT: {prompt}\n\nRESPONSE: {yes_or_no}\n")
+    return yes_or_no
+
+def owe_specific_via_cache(article):
+    return llm.process_with_cache(owe_specific, article)
+
 def parse_and_validate_screening_response(response):
     lines = response.strip().split('\n')
     if len(lines) != 2:
@@ -345,7 +359,7 @@ def prepare_articles(articles):
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
-def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True):
+def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True, use_owe_specific = False ):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     #print("\n")
     #print( article )
@@ -355,6 +369,7 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
     if do_screening:
         article["screening_codes"] = full_screening_via_cache(article)
         s_c = article["screening_codes"]
+        if use_owe_focussed and use_owe_specific: warnings.warn("Both use_owe_focussed and use_owe_specific are True; this is not recommended and may break something", UserWarning)
         if use_owe_focussed:
             article["owe_focussed"] = owe_focussed_via_cache(article)
             print("OWE FOCUSSED is " + article["owe_focussed"])
@@ -363,6 +378,15 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
             article["owe_focussed"] = "Unused"
             print("OWE is " + s_c["OWE"])
             owe = s_c["OWE"]
+        if use_owe_specific:
+            article["owe_specific"] = owe_specific_via_cache(article)
+            print("OWE SPECIFIC is " + article["owe_specific"])
+            owe = article["owe_specific"]
+        else:
+            article["owe_specific"] = "Unused"
+            print("OWE is " + s_c["OWE"])
+            owe = s_c["OWE"]
+
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
             article["passes_screening"] = "No"
         else:
@@ -662,16 +686,16 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "PASSES_SCREENING"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC", "PASSES_SCREENING"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
-        f.write("\t".join( [*base_headers, *screening_headers, *coding_headers] ) + "\n")
+        f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
 
-def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
+def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     values = [article["id"], article["title"], article["url"], "original", str(article["text_word_count"])]
     if do_screening:
         values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
-            article["owe_focussed"], article["passes_screening"]]
+            article["owe_focussed"], article["owe_specific"], article["passes_screening"]]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
         if do_coding and article["passes_screening"] == "Yes":
@@ -679,11 +703,11 @@ def output_codes( file_name, article, do_coding, do_screening, do_summarising ):
                 "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")
             if do_summarising and article["summarised"]:
                 coding_output_file.write("\t".join([article["id"], article["title"], article["url"],
-                                                    "summarised", str(article["summary_word_count"])]) + "\t" * 11)
+                                                    "summarised", str(article["summary_word_count"])]) + "\t" * 12)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_summary"][code_name]) for code_name in pas.rating_code_names) + "\n")
                 coding_output_file.write("\t".join([article["id"], article["title"], article["url"],
-                                                    "resummarised", str(article["resummary_word_count"])]) + "\t" * 11)
+                                                    "resummarised", str(article["resummary_word_count"])]) + "\t" * 12)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
         else:
@@ -791,7 +815,8 @@ def process_articles(
         suppress_id_in_html = False,
         coding_output_filename = "unset",
         html_output_filename = "unset",
-        use_owe_focussed = True
+        use_owe_focussed = True,
+        use_owe_specific = False
     ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -835,7 +860,7 @@ def process_articles(
     for article in articles_to_loop:
         sys.stdout.flush()
         if process_only_selected and not article["selected_for_processing"]: continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed)
+        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed, use_owe_specific)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)

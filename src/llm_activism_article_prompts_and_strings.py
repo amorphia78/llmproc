@@ -55,6 +55,22 @@ Here is the article for you to judge:
 
 prompt_owe_end = "\nNow output a single word, which is Yes if the article is OWE, and No if the article is not OWE."
 
+prompt_owe_specific_intro = """
+Your task is to screen a news media article to determine if it meets a specific definition. The definition is called OWE_SPECIFIC and it might apply or not apply to the article. Before I can define what it means for an article to be OWE_SPECIFIC I need to make some further definitions.
+
+Disruptive protest is protest that appears to be aimed at disrupting the functioning of some other activity generally regarded as legitimate (whether that is fossil fuel operations, road transport, sport, government operations, cultural displays, etcetera) as a means to draw attention to a cause or as a means to prevent the activity. Disruption is not dependent on the actual scale of disturbance of economic or social life.
+
+For example, a registered march in a city can cause great inconvenience, but because the disruption is a side-effect of the marchers’ primary intention to amplify their communications by gathering in numbers, we do not regard this as disruptive protest. Protest conducted by groups that often disrupt is not inherently disruptive. Such groups sometimes protest in ways that superficially resemble their disruptive protests without intending to disrupt on that occasion.
+
+Environmental protest is protest about issues that are uncontroversially serious environmental problems according to mainstream-science influenced positions. Therefore, protests against (for example) wind-turbines or mobile data networks are not included.
+
+OWE_SPECIFIC is defined by the following question. In a counterfactual world identical to ours, except that environmental protesters had not used disruptive methods at one or more specific protests mentioned in the article, would this article still exist in a form where the primary message was hardly changed? If the answer is "No", the article is OWE_SPECIFIC, because the article's primary message owes its existence in part to one or more specific disruptive protests.
+
+Here is the article for you to judge:
+"""
+
+prompt_owe_specific_end = "\nNow output a single word, and only that single word, which is Yes if the article is OWE_SPECIFIC, and No if the article is not OWE_SPECIFIC."
+
 prompt_full_screening_intro = """The following definitions of concepts (in capital letters) are relevant for judging some characteristics of a news media article, which is a task you will shortly perform.
 1 OWE. An article may be OWE, indicating it owes its existence to disruptive environmental protest. Further definitions are required:
 1a. Disruptive protest is protest that appears to be aimed at disrupting the functioning of some other activity generally regarded as legitimate (whether that is fossil fuel operations, road transport, sport, government operations, cultural displays, etcetera) as a means to draw attention to a cause or as a means to prevent the activity. Disruption is not dependent on the actual scale of disturbance of economic or social life. For example, a registered march in a city can cause great inconvenience, but because the disruption is a side-effect of the marchers’ primary intention to amplify their communications by gathering in numbers, we do not regard this as disruptive protest. Protest conducted by groups that often disrupt is not inherently disruptive. Such groups sometimes protest in ways that superficially resemble their disruptive protests without intending to disrupt on that occasion.
