@@ -64,7 +64,7 @@ For example, a registered march in a city can cause great inconvenience, but bec
 
 Environmental protest is protest about issues that are uncontroversially serious environmental problems according to mainstream-science influenced positions. Therefore, protests against (for example) wind-turbines or mobile data networks are not included.
 
-OWE_SPECIFIC is defined by the following question. In a counterfactual world identical to ours, except that environmental protesters had not used disruptive methods at one or more specific protests mentioned in the article, would this article still exist in a form where the primary message was hardly changed? If the answer is "No", the article is OWE_SPECIFIC, because the article's primary message owes its existence in part to one or more specific disruptive protests.
+OWE_SPECIFIC is defined by the following question. In a counterfactual world identical to ours, except that environmental protesters had not used disruptive methods at one protest mentioned in the article (or a small number of multiple protests all closely linked in theme and time and protest method), would this article still exist in a form where the primary message was hardly changed? If the answer is "No", the article is OWE_SPECIFIC, because the article's primary message owes its existence in part to one or more specific disruptive protests.
 
 Here is the article for you to judge:
 """
