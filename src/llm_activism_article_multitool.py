@@ -11,6 +11,9 @@ import llmproc_core as llm
 import llm_activism_article_prompts_and_strings as pas
 import atexit
 import math
+import subprocess
+import msvcrt  # For Windows key press detection
+import time
 
 debug_log = False
 debug_file_handle = open("debug_log.txt", 'w', encoding='utf-8')
@@ -386,7 +389,8 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
             owe = s_c["OWE"]
         if use_owe_specific:
             article["owe_specific"] = owe_specific_via_cache(article)
-            print("OWE SPECIFIC is " + article["owe_specific"])
+            print("OWE SPECIFIC CODING KEPT BLIND")
+            #print("OWE SPECIFIC is " + article["owe_specific"])
         else:
             article["owe_specific"] = "Unused"
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
@@ -502,8 +506,11 @@ def generate_image_html_github_url(article, image_data, output_picture_tags):
     '''
     return image_html
 
+
 def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
+
+    # Get the image URL
     if "url_large" in image_data:
         image_path = image_data["url_large"]
     elif "url" in image_data:
@@ -511,28 +518,42 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     else:
         warnings.warn(f"Image for {article['id']} has neither url_large nor url", UserWarning)
         image_path = ""
-    local_name = image_data['local_name']
-    local_path = image_data['local_path']
-    github_fallback = github_image_root + local_path + "/" + local_name
-    caption = image_data['caption']
+
+    # Clean Telegraph URLs that have the /web/timestamp prefix
+    # Example: https://www.telegraph.co.uk/web/20240613195129im_/https://www.telegraph.co.uk/content/...
+    # Should become: https://www.telegraph.co.uk/content/...
+    if image_path and "telegraph.co.uk/web/" in image_path:
+        match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_path)
+        if match:
+            image_path = match.group(1)
+
+    # Try to build GitHub path if local_name exists
+    local_name = image_data.get('local_name')
+    local_path = image_data.get('local_path', '')
+
+    # Only use GitHub URL if we have a local_name, otherwise use outlet URL
+    if local_name:
+        # Check if local_path is at the start of local_name
+        if local_name.startswith(local_path):
+            image_path = github_image_root + local_name
+        else:
+            # If not, combine local_path and local_name
+            image_path = github_image_root + local_path + '/' + local_name
+        # Remove any double slashes that might occur, except in https://
+        image_path = re.sub(r'(?<!:)//+', '/', image_path)
+    # else: keep using the outlet URL (image_path already set above)
+
+    caption = image_data.get('caption', '')
+
     if output_picture_tags:
         pic_tag = "#PH"
         caption_start_tag = "#CS "
         caption_end_tag = " #CE"
-        # image_description = llm.process_url_with_cache(llm_describe_image,image_path)
     else:
         pic_tag = ""
         caption_start_tag = ""
         caption_end_tag = ""
-    image_html_fallback_not_working = f'''
-        <figure width="100%">
-          {pic_tag}
-          <object data="{image_path}" type="image" width="100%">
-            <img src="{github_fallback}" alt="{caption}" width="100%">
-          </object>
-          {caption_start_tag}<figcaption align="center">{caption}</figcaption>{caption_end_tag}
-        </figure>
-        '''
+
     image_html = f'''
     <figure width="100%">
       {pic_tag}<img src="{image_path}" alt="{caption}" width="100%">
@@ -556,7 +577,7 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
     if "scraped_image_missing" not in article:
         article["scraped_image_missing"] = False
     first_half, second_half = split_string_at_midpoint(body)
-    html_output = "<html><body><br>"
+    html_output = "<html><head><style>body { max-width: 800px; margin: 0 auto; padding: 20px; }</style></head><body><br>"
     if not suppress_id_in_html:
         html_output += f"<h2>ID: {identity_code}</h2>"
     else:
@@ -833,6 +854,46 @@ def check_quotas_met(quota_tracker, source_quotas):
             return False
     return True
 
+def human_code_article(article, html_output_filename):
+    if article.get("passes_screening") != "Yes":
+        return
+    database_file = "finalBatch7HumanCoding.tsv"
+    article_id = article["id"]
+    # Check if article already has a code in the database
+    existing_codes = {}
+    if os.path.exists(database_file):
+        with open(database_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) == 2:
+                    existing_codes[parts[0]] = parts[1]
+    if article_id in existing_codes:
+        return
+    key_mappings = {
+        'n': "Not even owe",
+        'f': "Owe but fails other criteria",
+        'u': "Owe unspecific",
+        'g': "Owe grey-area specific",
+        's': "Owe specific"
+    }
+    html_filename = f"output_folders/individual_article_output/{sanitise_name(article_id)}_original.html"
+    full_path = os.path.abspath(html_filename)
+    subprocess.Popen([
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "--new-window",
+        f"file:///{full_path}"
+    ])
+    print(f"\nArticle coding needed - please press a key (N/F/U/G/S)")
+    while True:
+        if msvcrt.kbhit():
+            key = msvcrt.getch().decode('utf-8').lower()
+            if key in key_mappings:
+                code_value = key_mappings[key]
+                print(f"Coded as: {code_value}")
+                with open(database_file, 'a', encoding='utf-8') as f:
+                    f.write(f"{article_id}\t{code_value}\n")
+                break
+        time.sleep(0.1)  # Check every 100ms instead of spinning constantly
 
 def process_articles(
         key,
@@ -862,7 +923,8 @@ def process_articles(
         use_owe_specific=False,
         date_range_type="embargo",
         source_quotas=None,
-        quota_pad=0
+        quota_pad=0,
+        human_coding=False
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -930,7 +992,7 @@ def process_articles(
             if quota_tracker is not None and do_screening and article["passes_screening_specific"] == "Yes":
                 source = article.get("source", "Unknown")
                 quota_tracker[source] = quota_tracker.get(source, 0) + 1
-                print(f"Quota tracker: {quota_tracker}")
+                #print(f"Quota tracker: {quota_tracker}")
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
@@ -939,6 +1001,8 @@ def process_articles(
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
                     output_summary_process(article)
+                if human_coding:
+                    human_code_article(article, html_output_filename)
         if count_type == "any" or (count_type == "pass_screening" and article["passes_screening"] == "Yes"):
             number_completed += 1
             if number_completed >= stop_after:

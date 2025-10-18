@@ -1,6 +1,3 @@
-#This wouldn't actually run because you'd need an anthropic key specified
-#This was run again a second time but with output_only_articles_passing_screening=True
-
 import llm_activism_article_multitool as multitool
 
 with open('anthropic_key.txt', 'r') as f:
@@ -34,12 +31,11 @@ test_quotas = {
 
 # Uses articles now hard-coded instead of randomly selected (see below for original random selection)
 # Also, outputting non-summarised HTML
-if __name__ == "__main__":
-    multitool.process_articles(
+multitool.process_articles(
         key = anthropic_key,
         articles_path="../../new_article_content/",
         count_type="any",
-        stop_after=999999,  # Process all articles
+        stop_after=999999,
         article_selection="random",
         article_order_random_seed=7,
         source_quotas=real_quotas,
@@ -49,12 +45,13 @@ if __name__ == "__main__":
         do_screening=True,
         do_coding=False,
         do_summarising=False,
-        output_article_full=False,
+        output_article_full=True,
         output_article_summarised=False,
         output_only_articles_passing_screening=False,
-        output_articles_individually=False,
+        output_articles_individually=True,
         coding_output_filename="quota_screening.tsv",
-        html_output_filename="test_parse.html",
-        date_range_type="final"
+        html_output_filename="batch7all.html",
+        date_range_type="final",
+        human_coding=True
     )
 
