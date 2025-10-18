@@ -1,6 +1,3 @@
-import warnings
-warnings.warn("Using the version of the OWE prompts that does not mention tax and school strikes. We may want to update that. Also think about animal rights: https://docs.google.com/document/d/1vlhulnQNw0ANMgdldv6uZTnFujewdkNnn9NQraw5or8/edit?tab=t.0", UserWarning)
-
 screening_code_names = ["OWE", "SPURIOUS", "SPECIFIC", "LETTER", "ROUNDUP", "NON-UK EDITION", "NON-ENGLISH", "VIDEO", "NON-DISRUPTIVE OWE"]
 
 rating_code_names_b2 = ["Number of protestors", "Target category", "Activity being deliberately disrupted", "Activity being accidentally disrupted", "Nature of disruption", "Visual appearance costumes", "Visual appearance not ordinary", "Demographics", "Demand", "Location", "Acceptance of protest", "Believe in general acceptability", "Believe in general unacceptability", "Protester demographic diversity", "Radicalness of demand", "Level of disruption", "Otherness", "Political slant", "Issue bundling", "Portrayal", "Attention to message", "Attention to disruption" ]
@@ -64,7 +61,7 @@ For example, a registered march in a city can cause great inconvenience, but bec
 
 Environmental protest is protest about issues that are uncontroversially serious environmental problems according to mainstream-science influenced positions. Therefore, protests against (for example) wind-turbines or mobile data networks are not included.
 
-OWE_SPECIFIC is defined by the following question. In a counterfactual world identical to ours, except that environmental protesters had not used disruptive methods at one protest mentioned in the article (or a small number of multiple protests all closely linked in theme and time and protest method), would this article still exist in a form where the primary message was hardly changed? If the answer is "No", the article is OWE_SPECIFIC, because the article's primary message owes its existence in part to one or more specific disruptive protests.
+Articles that are OWE_SPECIFIC have the following properties: (1) The article's main focus is on one disruptive environmental protest, or a small number of such protests all closely linked in theme, time and protest method. (2) This means that in a counterfactual world identical to ours, except that this protest (or these protests) had not occurred, the article would not exist in a form where the primary message was hardly changed.
 
 Here is the article for you to judge:
 """

@@ -10,6 +10,7 @@ import sys
 import llmproc_core as llm
 import llm_activism_article_prompts_and_strings as pas
 import atexit
+import math
 
 debug_log = False
 debug_file_handle = open("debug_log.txt", 'w', encoding='utf-8')
@@ -348,6 +349,11 @@ def prepare_articles(articles):
             warnings.warn( f"Article '{article['id']}' has no source, assuming Daily Mail", UserWarning)
         if article["subtitle"] is None:
             article["subtitle"] = ""
+        # Strip problematic Unicode whitespace characters that have been known to occur
+        article["title"] = article["title"].replace('\u2028', ' ').replace('\u2029', ' ')
+        if article["subtitle"]:
+            article["subtitle"] = article["subtitle"].replace('\u2028', ' ').replace('\u2029', ' ')
+        article["text"] = article["text"].replace('\u2028', ' ').replace('\u2029', ' ')
         article["long_subtitle_to_body"] = False
         article["text_word_count"] = count_words(article["text"])
         article["title_word_count"] = count_words(article["title"])
@@ -381,16 +387,16 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
         if use_owe_specific:
             article["owe_specific"] = owe_specific_via_cache(article)
             print("OWE SPECIFIC is " + article["owe_specific"])
-            owe = article["owe_specific"]
         else:
             article["owe_specific"] = "Unused"
-            print("OWE is " + s_c["OWE"])
-            owe = s_c["OWE"]
-
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
             article["passes_screening"] = "No"
         else:
             article["passes_screening"] = "Yes"
+        if article["passes_screening"] == "Yes" and article.get("owe_specific") == "Yes":
+            article["passes_screening_specific"] = "Yes"
+        else:
+            article["passes_screening_specific"] = "No"
     if do_coding and article["passes_screening"] == "Yes":
         article["codes_string"] = code_article(article, "text")
     if do_summary:
@@ -686,7 +692,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC", "PASSES_SCREENING"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -694,8 +700,10 @@ def output_coding_headers(file_name, do_screening, do_coding):
 def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     values = [article["id"], article["title"], article["url"], "original", str(article["text_word_count"])]
     if do_screening:
-        values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
-            article["owe_focussed"], article["owe_specific"], article["passes_screening"]]
+        if do_screening:
+            values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
+                article["owe_focussed"], article["owe_specific"], article["passes_screening"],
+                article["passes_screening_specific"]]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
         if do_coding and article["passes_screening"] == "Yes":
@@ -771,56 +779,95 @@ def select_articles_from_file(articles, file_name):
                     articles[key]['selected_for_processing'] = True
                     print("selected: " + id_code)
 
-def embargo_recent(articles, years=2):
+
+def filter_articles_by_date(articles, date_range_type="embargo"):
+    if date_range_type == "all":
+        print(f"No date filtering applied - keeping all {len(articles)} articles")
+        return articles
     current_date = datetime.datetime.now()
-    cutoff_date = current_date - datetime.timedelta(days=365 * years)
     filtered_articles = {}
     removed_count = 0
-    for url, article in articles.items():
-        if "date" in article:
-            try:
-                pub_date = datetime.datetime.fromisoformat(article["date"])
-                if pub_date < cutoff_date:
+    if date_range_type == "embargo":
+        cutoff_date = current_date - datetime.timedelta(days=365 * 2)
+        for url, article in articles.items():
+            if "date" in article:
+                try:
+                    pub_date = datetime.datetime.fromisoformat(article["date"])
+                    if pub_date < cutoff_date:
+                        filtered_articles[url] = article
+                    else:
+                        removed_count += 1
+                except (ValueError, TypeError):
+                    warnings.warn(
+                        f"Can't find a date in article at {url} that matches expected format, so possible embargo violation.",
+                        UserWarning)
                     filtered_articles[url] = article
-                else:
+            else:
+                filtered_articles[url] = article
+        print(f"Embargo removed {removed_count} articles published within the last 2 years")
+    elif date_range_type == "final":
+        start_date = datetime.datetime.fromisoformat("2023-10-08")
+        end_date = datetime.datetime.fromisoformat("2025-10-07")
+        for url, article in articles.items():
+            if "date" in article:
+                try:
+                    pub_date = datetime.datetime.fromisoformat(article["date"])
+                    if start_date <= pub_date <= end_date:
+                        filtered_articles[url] = article
+                    else:
+                        removed_count += 1
+                except (ValueError, TypeError):
+                    warnings.warn(f"Can't parse date for article at {url}, excluding from final dataset.", UserWarning)
                     removed_count += 1
-            except (ValueError, TypeError):
-                warnings.warn(f"Can't find a date in article at {url} that matches expected format, so possible embargo violation.", UserWarning)
-        else:
-            filtered_articles[url] = article
-    print(f"Embargo removed {removed_count} articles published within the last {years} years")
+            else:
+                warnings.warn(f"Article at {url} has no date, excluding from final dataset.", UserWarning)
+                removed_count += 1
+        print(f"Date filtering (final) removed {removed_count} articles outside range 2023-10-08 to 2025-10-07")
+    else:
+        raise ValueError(f"Invalid date_range_type: {date_range_type}. Must be 'embargo', 'all', or 'final'.")
     return filtered_articles
+
+def check_quotas_met(quota_tracker, source_quotas):
+    for source, target in source_quotas.items():
+        if quota_tracker.get(source, 0) < target:
+            return False
+    return True
+
 
 def process_articles(
         key,
-        debug_screening_process = False,
+        debug_screening_process=False,
         config_file="none",
-        articles_path = "../article_contents",
-        do_screening = False,
-        do_coding = False,
-        do_summarising = False,
-        process_only_selected = False,
-        stop_after = 50,
-        count_type = "any",
-        article_order_random_seed = 420,
-        output_article_full = False,
-        output_article_summarised = False,
-        output_article_summary_process = False,
-        output_articles_individually = False,
-        output_only_articles_passing_screening = False,
-        output_detailed_word_counts = False,
-        article_selection = "random",
-        article_exclusion_list = "none",
-        output_picture_tags = False,
-        suppress_id_in_html = False,
-        coding_output_filename = "unset",
-        html_output_filename = "unset",
-        use_owe_focussed = True,
-        use_owe_specific = False
-    ):
+        articles_path="../article_contents",
+        do_screening=False,
+        do_coding=False,
+        do_summarising=False,
+        process_only_selected=False,
+        stop_after=50,
+        count_type="any",
+        article_order_random_seed=420,
+        output_article_full=False,
+        output_article_summarised=False,
+        output_article_summary_process=False,
+        output_articles_individually=False,
+        output_only_articles_passing_screening=False,
+        output_detailed_word_counts=False,
+        article_selection="random",
+        article_exclusion_list="none",
+        output_picture_tags=False,
+        suppress_id_in_html=False,
+        coding_output_filename="unset",
+        html_output_filename="unset",
+        use_owe_focussed=True,
+        use_owe_specific=False,
+        date_range_type="embargo",
+        source_quotas=None,
+        quota_pad=0
+):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
-        articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename = load_config(config_file )
+        articles_path, do_screening, do_coding, do_summarising, process_only_selected, stop_after, count_type, article_order_random_seed, output_article_full, output_article_summarised, output_article_summary_process, output_only_articles_passing_screening, output_detailed_word_counts, article_selection, article_exclusion_list, output_picture_tags, coding_output_filename, html_output_filename = load_config(
+            config_file)
     if coding_output_filename == "unset":
         coding_output_filename = f"coding_output_{timestamp}.tsv"
     if html_output_filename == "unset":
@@ -831,17 +878,17 @@ def process_articles(
         llm.no_cache = True
     else:
         llm.no_cache = False
-    llm.load_client( key )
+    llm.load_client(key)
     articles = read_all_article_content(articles_path)
-    articles = sanitise_ids( articles ) # dealing with poorly formed ID codes
-    articles = check_and_correct_dates( articles )
+    articles = sanitise_ids(articles)  # dealing with poorly formed ID codes
+    articles = check_and_correct_dates(articles)
     prepare_articles(articles)  # tidying, e.g. dealing with missing ID codes
     if article_exclusion_list != "none":
         exclusion_list = assemble_exclusion_list(article_exclusion_list)
         # Remove excluded articles from the dictionary
         articles = {url: article for url, article in articles.items()
-            if article["id"] not in exclusion_list}
-    articles = embargo_recent(articles)
+                    if article["id"] not in exclusion_list}
+    articles = filter_articles_by_date(articles, date_range_type)
     ids_included_in_batch = []
     if do_screening or do_coding:
         output_coding_headers(coding_output_filename, do_screening, do_coding)
@@ -852,30 +899,59 @@ def process_articles(
         articles_to_loop = select_articles_weighted_random(articles, stop_after, article_order_random_seed)
     else:
         select_articles_from_file(articles, article_selection)
-        articles_to_loop = articles.values()
+        articles_to_loop = list(articles.values())
         if not process_only_selected:
-            sys.exit("It doesn't make sense to specify an article selection with article_selection but also allow process_only_selected to be False.")
-    print( "Processing" )
+            sys.exit(
+                "It doesn't make sense to specify an article selection with article_selection but also allow process_only_selected to be False.")
     number_completed = 0
+    quota_tracker = {} if source_quotas is not None else None
+    print(f"Now processing {len(articles_to_loop)} articles")
+    if quota_pad > 0 and source_quotas is not None:
+        adjusted_quotas = {source: math.ceil(count * ( 1 + quota_pad ) ) for source, count in source_quotas.items()}
+        print(f"Original quotas: {source_quotas}")
+        print(f"Adjusted quotas: {adjusted_quotas}")
+        source_quotas = adjusted_quotas
     for article in articles_to_loop:
         sys.stdout.flush()
+        if quota_tracker is not None and check_quotas_met(quota_tracker, source_quotas):
+            print("All source quotas met!")
+            break
         if process_only_selected and not article["selected_for_processing"]: continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed, use_owe_specific)
+        if quota_tracker is not None: # Skip if this source has already met its quota
+            source = article.get("source", "Unknown")
+            source_target = source_quotas.get(source, 0)
+            source_current = quota_tracker.get(source, 0)
+            if source_current >= source_target:
+                continue
+        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed,use_owe_specific)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
+            if quota_tracker is not None and do_screening and article["passes_screening_specific"] == "Yes":
+                source = article.get("source", "Unknown")
+                quota_tracker[source] = quota_tracker.get(source, 0) + 1
+                print(f"Quota tracker: {quota_tracker}")
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html )
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
+                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
                 if do_screening or do_coding:
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
-                    output_summary_process( article )
+                    output_summary_process(article)
         if count_type == "any" or (count_type == "pass_screening" and article["passes_screening"] == "Yes"):
             number_completed += 1
             if number_completed >= stop_after:
-                print( f"Ending because processed {number_completed} articles." )
+                print(f"Ending because processed {number_completed} articles.")
                 break
+    if quota_tracker is not None and not check_quotas_met(quota_tracker, source_quotas):
+        print("\nWARNING: Ran out of articles before meeting all quotas!")
+        print("Current quota status:")
+        for source, target in source_quotas.items():
+            current = quota_tracker.get(source, 0)
+            print(f"  {source}: {current}/{target}")
+        warnings.warn("Not all source quotas were met - ran out of articles", UserWarning)
+
 #    with open( f"output_folders/batch_ran/batch_{timestamp}.txt", 'w', encoding='utf-8') as f:
 #        f.write('\n'.join(ids_included_in_batch))
 
