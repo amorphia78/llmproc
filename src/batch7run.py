@@ -33,7 +33,7 @@ test_quotas = {
 # Also, outputting non-summarised HTML
 multitool.process_articles(
         key = anthropic_key,
-        articles_path="../../new_article_content/",
+        articles_path="../../disruption/content_scraping/article_contents",
         count_type="any",
         stop_after=999999,
         article_selection="random",

@@ -892,6 +892,10 @@ def human_code_article(article, html_output_filename):
                 print(f"Coded as: {code_value}")
                 with open(database_file, 'a', encoding='utf-8') as f:
                     f.write(f"{article_id}\t{code_value}\n")
+                owe_specific_count = sum(1 for code in existing_codes.values() if code == "Owe specific")
+                if code_value == "Owe specific":
+                    owe_specific_count += 1
+                print(f"Total 'Owe specific' codes: {owe_specific_count}")
                 break
         time.sleep(0.1)  # Check every 100ms instead of spinning constantly
 
