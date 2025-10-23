@@ -13,6 +13,19 @@ The target word count is 300 words.
 Here is the original article:
 """
 
+prompt_summarise_very_short_intro = """Please process a news media article for me. The article contains some information about a disruptive primary protest action taken by one or more environmental protesters. The primary protest action is the most prominent environmental protest action mentioned in the article that is disruptive. The primary protest action is not action that is not disruptive. The article may or may not also contain information about secondary separate actions taken by one or more protesters. I would like you to summarise the article for me, focussing on the primary disruptive protest action, but also including some information about any secondary protest actions, and also information about any other focal issues in the article, if there are any. 
+
+Make sure your summary contains the following information about the primary protest, if the information is present in the article: the number of people involved in the protest, the target of the disruption (e.g. a company or government building), the jobs or backgrounds of the protesters, and the demands of the protesters. State whether the tone of the article is positive, negative, or neutral about the protest. Organise your summary like this:
+
+PRIMARY: [A few sentences about the primary protest.]
+SECONDARY: [A sentence or two about any secondary protests, if mentioned.]
+OTHER FOCAL: [A sentence or two about any other focal issued, if mentioned.]
+
+The summary should be in less than 100 words.
+
+Here is the original article:
+"""
+
 prompt_summarise_intro_old = """Please process a news media article for me. The article contains some information about a disruptive primary protest action taken by one or more environmental protesters. The primary protest action is the most prominent disruptive environmental protest action mentioned in the article. The article may or may not also contain information about secondary separate actions taken by one or more protesters. I would like you to produce a summarised version of the whole article, containing as much information as possible about the primary protest action, using the same wording as the original, but with no information about any secondary protest actions. 
 
 Make sure your summary contains the following information, if the information is also present in the article: the number of people involved in the protest, the target of the disruption (e.g. a company or government building), the jobs or backgrounds of the protesters, and the demands of the protesters. Try to preserve the tone of the article (positive or negative towards the protests).

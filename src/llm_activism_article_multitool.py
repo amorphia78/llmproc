@@ -181,17 +181,20 @@ def sanitise_ids(articles):
         warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
-def summarise_article(article):
+def summarise_article(article, very_short_summary):
     content = "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"]
-    prompt = pas.prompt_summarise_intro + content + pas.prompt_summarise_end
+    if very_short_summary:
+        prompt = pas.prompt_summarise_very_short_intro + content + pas.prompt_summarise_end
+    else:
+        prompt = pas.prompt_summarise_intro + content + pas.prompt_summarise_end
     response = llm.send_prompt(prompt, "summariser", article["title"])
     if response.startswith(article["title"]):
         return response[len(article["title"]):].lstrip()
     else:
         raise ValueError("The summary did not begin with the article title.")
 
-def summarise_article_via_cache(article):
-    return llm.process_with_cache( summarise_article, article )
+def summarise_article_via_cache(article, very_short_summary):
+    return llm.process_with_cache( summarise_article, article, very_short_summary )
 
 def resummarise_article(article):
     if article["summary_word_count"] < 350:
@@ -368,7 +371,7 @@ def prepare_articles(articles):
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
-def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True, use_owe_specific = False ):
+def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True, use_owe_specific = False, very_short_summary=False ):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     #print("\n")
     #print( article )
@@ -401,7 +404,7 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
         article["codes_string"] = code_article(article, "text")
     if do_summary:
         if article["text_word_count"] > 350:
-            article["summary"] = summarise_article_via_cache(article)
+            article["summary"] = summarise_article_via_cache(article, very_short_summary)
             article["summarised"] = True
             article["summary_word_count"] = count_words(article["summary"])
             if do_coding:
@@ -913,6 +916,7 @@ def process_articles(
         do_screening=False,
         do_coding=False,
         do_summarising=False,
+        very_short_summary=False,
         process_only_selected=False,
         stop_after=50,
         count_type="any",
@@ -922,6 +926,7 @@ def process_articles(
         output_article_summary_process=False,
         output_articles_individually=False,
         output_only_articles_passing_screening=False,
+        output_only_articles_passing_screening_specific=False,
         output_detailed_word_counts=False,
         article_selection="random",
         article_exclusion_list="none",
@@ -996,14 +1001,10 @@ def process_articles(
             if source_current >= source_target:
                 continue
         processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed,
-                                                use_owe_specific)
+                                                use_owe_specific, very_short_summary)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
-            if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
-                if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
-                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
             if do_screening and use_owe_specific:
                 human_code = load_human_coding_for_article(article["id"])
                 if human_coding and human_code is None and article["passes_screening"] == "Yes":
@@ -1013,6 +1014,17 @@ def process_articles(
                     article["passes_screening_specific"] = "Yes"
                 else:
                     article["passes_screening_specific"] = "No"
+            if output_only_articles_passing_screening_specific:
+                passes_chosen_screening = article["passes_screening_specific"] == "Yes"
+            elif output_only_articles_passing_screening:
+                passes_chosen_screening = article["passes_screening"] == "Yes"
+            else:
+                passes_chosen_screening = True
+            if passes_chosen_screening:
+                if output_article_full or output_article_summarised:
+                    print("*************** OUTPUTTING\n")
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
+                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")

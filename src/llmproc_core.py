@@ -73,10 +73,14 @@ def send_prompt(prompt, llm_task_type="summariser", prefill="", prior_prompt="",
         response = prefill + response
     return response
 
-def process_with_cache(process_func, article):
+def process_with_cache(process_func, article, additional_arg=None):
     cache_dir = f"llm_caches/{process_func.__name__}"
     os.makedirs(cache_dir, exist_ok=True)
-    cache_file = f"{cache_dir}/{article['id']}.json"
+    if additional_arg is not None:
+        safe_arg = str(additional_arg).replace('/', '_').replace('\\', '_')
+        cache_file = f"{cache_dir}/{article['id']}_{safe_arg}.json"
+    else:
+        cache_file = f"{cache_dir}/{article['id']}.json"
     if os.path.exists(cache_file) and not no_cache:
         print(f"{process_func.__name__} for article {article['id']} (retrieving cache)")
         with open(cache_file, 'r', encoding='utf-8') as f:
@@ -84,7 +88,10 @@ def process_with_cache(process_func, article):
             return cached_data['string_data'] if 'string_data' in cached_data else cached_data
     else:
         print(f"{process_func.__name__} for article {article['id']} (consulting LLM)")
-        result = process_func(article)
+        if additional_arg is not None:
+            result = process_func(article, additional_arg)
+        else:
+            result = process_func(article)
         if isinstance(result, str):
             data_to_store = {'string_data': result}
         else:
