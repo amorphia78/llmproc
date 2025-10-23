@@ -388,19 +388,15 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
             print("OWE is " + s_c["OWE"])
             owe = s_c["OWE"]
         if use_owe_specific:
-            article["owe_specific"] = owe_specific_via_cache(article)
+            article["owe_specific_llm"] = owe_specific_via_cache(article)
             print("OWE SPECIFIC CODING KEPT BLIND")
-            #print("OWE SPECIFIC is " + article["owe_specific"])
+            #print("OWE SPECIFIC is " + article["owe_specific_llm"])
         else:
-            article["owe_specific"] = "Unused"
+            article["owe_specific_llm"] = "Unused"
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
             article["passes_screening"] = "No"
         else:
             article["passes_screening"] = "Yes"
-        if article["passes_screening"] == "Yes" and article.get("owe_specific") == "Yes":
-            article["passes_screening_specific"] = "Yes"
-        else:
-            article["passes_screening_specific"] = "No"
     if do_coding and article["passes_screening"] == "Yes":
         article["codes_string"] = code_article(article, "text")
     if do_summary:
@@ -713,7 +709,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -723,7 +719,10 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     if do_screening:
         if do_screening:
             values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
-                article["owe_focussed"], article["owe_specific"], article["passes_screening"],
+                article["owe_focussed"],
+                article["owe_specific_llm"],
+                article["owe_specific_human"],
+                article["passes_screening"],
                 article["passes_screening_specific"]]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
@@ -854,9 +853,20 @@ def check_quotas_met(quota_tracker, source_quotas):
             return False
     return True
 
+def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCoding.tsv"):
+    """Load existing human coding from database file"""
+    if os.path.exists(database_file):
+        with open(database_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) == 2 and parts[0] == article_id:
+                    return parts[1]
+    return None
+
+
 def human_code_article(article, html_output_filename):
-    if article.get("passes_screening") != "Yes":
-        return
+    if article["passes_screening"] != "Yes":
+        return None
     database_file = "finalBatch7HumanCoding.tsv"
     article_id = article["id"]
     # Check if article already has a code in the database
@@ -868,7 +878,7 @@ def human_code_article(article, html_output_filename):
                 if len(parts) == 2:
                     existing_codes[parts[0]] = parts[1]
     if article_id in existing_codes:
-        return
+        return existing_codes[article_id]
     key_mappings = {
         'n': "Not even owe",
         'f': "Owe but fails other criteria",
@@ -896,7 +906,7 @@ def human_code_article(article, html_output_filename):
                 if code_value == "Owe specific":
                     owe_specific_count += 1
                 print(f"Total 'Owe specific' codes: {owe_specific_count}")
-                break
+                return code_value  # Return the code value for immediate use
         time.sleep(0.1)  # Check every 100ms instead of spinning constantly
 
 def process_articles(
@@ -973,7 +983,7 @@ def process_articles(
     quota_tracker = {} if source_quotas is not None else None
     print(f"Now processing {len(articles_to_loop)} articles")
     if quota_pad > 0 and source_quotas is not None:
-        adjusted_quotas = {source: math.ceil(count * ( 1 + quota_pad ) ) for source, count in source_quotas.items()}
+        adjusted_quotas = {source: math.ceil(count * (1 + quota_pad)) for source, count in source_quotas.items()}
         print(f"Original quotas: {source_quotas}")
         print(f"Adjusted quotas: {adjusted_quotas}")
         source_quotas = adjusted_quotas
@@ -983,20 +993,34 @@ def process_articles(
             print("All source quotas met!")
             break
         if process_only_selected and not article["selected_for_processing"]: continue
-        if quota_tracker is not None: # Skip if this source has already met its quota
+        if quota_tracker is not None:
             source = article.get("source", "Unknown")
             source_target = source_quotas.get(source, 0)
             source_current = quota_tracker.get(source, 0)
             if source_current >= source_target:
                 continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed,use_owe_specific)
+        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed, use_owe_specific)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
-            if quota_tracker is not None and do_screening and article["passes_screening_specific"] == "Yes":
-                source = article.get("source", "Unknown")
-                quota_tracker[source] = quota_tracker.get(source, 0) + 1
-                print(f"Quota tracker: {quota_tracker}")
+            if do_screening and use_owe_specific:
+                human_code = load_human_coding_for_article(article["id"])
+                if human_coding and human_code is None and article["passes_screening"] == "Yes":
+                    human_code = human_code_article(article, html_output_filename)
+                article["owe_specific_human"] = human_code if human_code is not None else ""
+                if article["passes_screening"] == "Yes" and article["owe_specific_human"] == "Owe specific":
+                    article["passes_screening_specific"] = "Yes"
+                else:
+                    article["passes_screening_specific"] = "No"
+            if quota_tracker is not None and do_screening and use_owe_specific:
+                if article["passes_screening_specific"] == "Yes":
+                    source = article.get("source", "Unknown")
+                    quota_tracker[source] = quota_tracker.get(source, 0) + 1
+                    all_sources = sorted(set(quota_tracker.keys()) | set(source_quotas.keys()))
+                    total_tracker = sum(quota_tracker.values())
+                    total_required = sum(source_quotas.values())
+                    print( f"Quotas: {', '.join(f'{s}: {quota_tracker.get(s, 0)}/{source_quotas.get(s, 0)}' for s in all_sources)}")
+                    print(f"Total: {total_tracker}/{total_required}")
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
@@ -1005,8 +1029,6 @@ def process_articles(
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
                     output_summary_process(article)
-                if human_coding:
-                    human_code_article(article, html_output_filename)
         if count_type == "any" or (count_type == "pass_screening" and article["passes_screening"] == "Yes"):
             number_completed += 1
             if number_completed >= stop_after:

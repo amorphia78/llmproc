@@ -39,7 +39,7 @@ multitool.process_articles(
         article_selection="random",
         article_order_random_seed=7,
         source_quotas=real_quotas,
-        quota_pad=0.2,
+        quota_pad=0,
         use_owe_focussed=False,
         use_owe_specific=True,
         do_screening=True,
@@ -49,7 +49,7 @@ multitool.process_articles(
         output_article_summarised=False,
         output_only_articles_passing_screening=False,
         output_articles_individually=True,
-        coding_output_filename="quota_screening.tsv",
+        coding_output_filename="batch7_quota_screening.tsv",
         html_output_filename="batch7all.html",
         date_range_type="final",
         human_coding=True
