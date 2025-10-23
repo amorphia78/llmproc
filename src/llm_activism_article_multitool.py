@@ -993,16 +993,21 @@ def process_articles(
             print("All source quotas met!")
             break
         if process_only_selected and not article["selected_for_processing"]: continue
-        if quota_tracker is not None:
+        if quota_tracker is not None:  # Skip if this source has already met its quota
             source = article.get("source", "Unknown")
             source_target = source_quotas.get(source, 0)
             source_current = quota_tracker.get(source, 0)
             if source_current >= source_target:
                 continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed, use_owe_specific)
+        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed,
+                                                use_owe_specific)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
+            if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
+                if output_article_full or output_article_summarised:
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
+                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
             if do_screening and use_owe_specific:
                 human_code = load_human_coding_for_article(article["id"])
                 if human_coding and human_code is None and article["passes_screening"] == "Yes":
@@ -1022,9 +1027,6 @@ def process_articles(
                     print( f"Quotas: {', '.join(f'{s}: {quota_tracker.get(s, 0)}/{source_quotas.get(s, 0)}' for s in all_sources)}")
                     print(f"Total: {total_tracker}/{total_required}")
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
-                if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
-                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
                 if do_screening or do_coding:
                     output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
                 if output_article_summary_process and do_summarising:
