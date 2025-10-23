@@ -996,7 +996,7 @@ def process_articles(
             if quota_tracker is not None and do_screening and article["passes_screening_specific"] == "Yes":
                 source = article.get("source", "Unknown")
                 quota_tracker[source] = quota_tracker.get(source, 0) + 1
-                #print(f"Quota tracker: {quota_tracker}")
+                print(f"Quota tracker: {quota_tracker}")
             if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
                 if output_article_full or output_article_summarised:
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
