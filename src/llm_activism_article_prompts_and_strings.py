@@ -20,6 +20,9 @@ Make sure your summary contains the following information about the primary prot
 PRIMARY: [A few sentences about the primary protest.]
 SECONDARY: [A sentence or two about any secondary protests, if mentioned.]
 OTHER FOCAL: [A sentence or two about any other focal issued, if mentioned.]
+TONE: [At most one sentence about the articles tone towards the protest.]
+
+Don't output content except inside the above blocks.
 
 The summary should be in less than 100 words.
 

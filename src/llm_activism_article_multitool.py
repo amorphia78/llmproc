@@ -181,6 +181,26 @@ def sanitise_ids(articles):
         warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
+def do_summarization_for_article(article, do_coding, very_short_summary):
+    if article["text_word_count"] > 350 or very_short_summary:
+        article["summary"] = summarise_article_via_cache(article, very_short_summary)
+        article["summarised"] = True
+        article["summary_word_count"] = count_words(article["summary"])
+        if do_coding:
+            article["summary_coded"] = code_article(article, "summary")
+            article["summary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["summary_coded"])
+            if False or "MISMATCH" in tsv_extract_column(article["summary_comparison"],4): # Never re-summarising anyway (for now) for convenience
+                print("Re-summarising")
+                article["resummarised"] = "Yes"
+                article["resummary"] = resummarise_article(article)
+                article["resummary_word_count"] = count_words(article["resummary"])
+                article["resummary_coded"] = code_article(article, "resummary")
+                article["resummary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["resummary_coded"])
+            else:
+                article["resummarised"] = "No"
+    else:
+        article["summarised"] = False
+
 def summarise_article(article, very_short_summary):
     content = "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"]
     if very_short_summary:
@@ -371,7 +391,7 @@ def prepare_articles(articles):
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
-def process_article(article, do_screening = True, do_coding = False, do_summary = False, use_owe_focussed = True, use_owe_specific = False, very_short_summary=False ):
+def screen_and_code_article(article, do_screening = True, do_coding = False, use_owe_focussed = True, use_owe_specific = False ):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
     #print("\n")
     #print( article )
@@ -402,25 +422,6 @@ def process_article(article, do_screening = True, do_coding = False, do_summary 
             article["passes_screening"] = "Yes"
     if do_coding and article["passes_screening"] == "Yes":
         article["codes_string"] = code_article(article, "text")
-    if do_summary:
-        if article["text_word_count"] > 350:
-            article["summary"] = summarise_article_via_cache(article, very_short_summary)
-            article["summarised"] = True
-            article["summary_word_count"] = count_words(article["summary"])
-            if do_coding:
-                article["summary_coded"] = code_article(article, "summary")
-                article["summary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["summary_coded"])
-                if False or "MISMATCH" in tsv_extract_column(article["summary_comparison"],4): # Never re-summarising anyway (for now) for convenience
-                    print("Re-summarising")
-                    article["resummarised"] = "Yes"
-                    article["resummary"] = resummarise_article(article)
-                    article["resummary_word_count"] = count_words(article["resummary"])
-                    article["resummary_coded"] = code_article(article, "resummary")
-                    article["resummary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["resummary_coded"])
-                else:
-                    article["resummarised"] = "No"
-        else:
-            article["summarised"] = False
     return True
 
 def split_string_at_midpoint(input_string):
@@ -1000,8 +1001,7 @@ def process_articles(
             source_current = quota_tracker.get(source, 0)
             if source_current >= source_target:
                 continue
-        processing_successful = process_article(article, do_screening, do_coding, do_summarising, use_owe_focussed,
-                                                use_owe_specific, very_short_summary)
+        processing_successful = screen_and_code_article(article, do_screening, do_coding, use_owe_focussed, use_owe_specific )
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
@@ -1014,6 +1014,11 @@ def process_articles(
                     article["passes_screening_specific"] = "Yes"
                 else:
                     article["passes_screening_specific"] = "No"
+                if do_summarising and article["passes_screening_specific"] == "Yes":
+                    do_summarization_for_article(article, do_coding, very_short_summary)
+            elif do_summarising:
+                if not do_screening or article["passes_screening"] == "Yes":
+                    do_summarization_for_article(article, do_coding, very_short_summary)
             if output_only_articles_passing_screening_specific:
                 passes_chosen_screening = article["passes_screening_specific"] == "Yes"
             elif output_only_articles_passing_screening:
@@ -1022,7 +1027,6 @@ def process_articles(
                 passes_chosen_screening = True
             if passes_chosen_screening:
                 if output_article_full or output_article_summarised:
-                    print("*************** OUTPUTTING\n")
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
                                    output_picture_tags, output_articles_individually, suppress_id_in_html)
             if quota_tracker is not None and do_screening and use_owe_specific:
