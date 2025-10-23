@@ -29,8 +29,6 @@ test_quotas = {
     "ITV": 0
 }
 
-# Uses articles now hard-coded instead of randomly selected (see below for original random selection)
-# Also, outputting non-summarised HTML
 multitool.process_articles(
         key = anthropic_key,
         articles_path="../../disruption/content_scraping/article_contents",
