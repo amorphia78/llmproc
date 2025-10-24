@@ -230,7 +230,12 @@ def owe_focussed(article):
     title_and_body = get_title_and_subtitle_and_article(article, article["text"])
     prompt = pas.prompt_owe_intro + title_and_body + pas.prompt_owe_end
     yes_or_no = llm.send_prompt( prompt, "processor" )
+    if yes_or_no.startswith("Yes") and (len(yes_or_no) == 3 or yes_or_no[3:4].isspace()):
+        yes_or_no = "Yes"
+    elif yes_or_no.startswith("No") and (len(yes_or_no) == 2 or yes_or_no[2:3].isspace()):
+        yes_or_no = "No"
     if yes_or_no != "Yes" and yes_or_no != "No":
+        print(f"This is not Yes or No: {yes_or_no}")
         raise ValueError("Bad response for owe check.")
     if debug_log:
         write_debug(f"owe_focussed() for {article['id']}\nPROMPT: {prompt}\n\nRESPONSE: {yes_or_no}\n")
@@ -391,29 +396,29 @@ def prepare_articles(articles):
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
 
-def screen_and_code_article(article, do_screening = True, do_coding = False, use_owe_focussed = True, use_owe_specific = False ):
+def screen_and_code_article(article, do_screening=True, do_coding=False, use_owe_focussed=True, use_owe_specific=False,get_owe_focussed_llm_coding=False):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
-    #print("\n")
-    #print( article )
-    #print("\n")
     if article_has_image_issues(article):
         warnings.warn(f"Article being processed has image issues: {article['id']}", UserWarning)
     if do_screening:
         article["screening_codes"] = full_screening_via_cache(article)
         s_c = article["screening_codes"]
-        if use_owe_focussed and use_owe_specific: warnings.warn("Both use_owe_focussed and use_owe_specific are True; this is not recommended and may break something", UserWarning)
-        if use_owe_focussed:
-            article["owe_focussed"] = owe_focussed_via_cache(article)
-            print("OWE FOCUSSED is " + article["owe_focussed"])
-            owe = article["owe_focussed"]
+        if use_owe_focussed and use_owe_specific:
+            warnings.warn("Both use_owe_focussed and use_owe_specific are True; this is not recommended and may break something", UserWarning)
+        if use_owe_focussed or get_owe_focussed_llm_coding:
+            article["owe_focussed_llm"] = owe_focussed_via_cache(article)
+            print("OWE FOCUSSED LLM is " + article["owe_focussed_llm"])
         else:
-            article["owe_focussed"] = "Unused"
+            article["owe_focussed_llm"] = "Unused"
+        if use_owe_focussed:
+            owe = article["owe_focussed_llm"]
+        else:
             print("OWE is " + s_c["OWE"])
             owe = s_c["OWE"]
         if use_owe_specific:
             article["owe_specific_llm"] = owe_specific_via_cache(article)
             print("OWE SPECIFIC CODING KEPT BLIND")
-            #print("OWE SPECIFIC is " + article["owe_specific_llm"])
+            # print("OWE SPECIFIC is " + article["owe_specific_llm"])
         else:
             article["owe_specific_llm"] = "Unused"
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
@@ -723,7 +728,7 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     if do_screening:
         if do_screening:
             values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
-                article["owe_focussed"],
+                article["owe_focussed_llm"],
                 article["owe_specific_llm"],
                 article["owe_specific_human"],
                 article["passes_screening"],
@@ -935,6 +940,7 @@ def process_articles(
         suppress_id_in_html=False,
         coding_output_filename="unset",
         html_output_filename="unset",
+        get_owe_focussed_llm_coding=False,
         use_owe_focussed=True,
         use_owe_specific=False,
         date_range_type="embargo",
@@ -1001,7 +1007,7 @@ def process_articles(
             source_current = quota_tracker.get(source, 0)
             if source_current >= source_target:
                 continue
-        processing_successful = screen_and_code_article(article, do_screening, do_coding, use_owe_focussed, use_owe_specific )
+        processing_successful = screen_and_code_article(article, do_screening, do_coding, use_owe_focussed, use_owe_specific, get_owe_focussed_llm_coding )
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
