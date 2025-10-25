@@ -755,7 +755,7 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation = True ):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation = True, output_rtf_for_corrections = False ):
     if output_individually:
         os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
@@ -946,7 +946,8 @@ def process_articles(
         date_range_type="embargo",
         source_quotas=None,
         quota_pad=0,
-        human_coding=False
+        human_coding=False,
+        output_rtf_for_corrections=False
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1035,7 +1036,9 @@ def process_articles(
             if passes_chosen_screening:
                 if output_article_full or output_article_summarised:
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
-                                   output_picture_tags, output_articles_individually, suppress_id_in_html)
+                                   output_picture_tags, output_articles_individually, suppress_id_in_html,
+                                   append_to_compilation = False,
+                                   output_rtf_for_corrections = output_rtf_for_corrections )
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")

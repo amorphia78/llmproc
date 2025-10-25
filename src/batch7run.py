@@ -43,15 +43,15 @@ multitool.process_articles(
         use_owe_specific=True,
         do_screening=True,
         do_coding=False,
-        do_summarising=False,
+        do_summarising=True,
         very_short_summary=True,
         output_article_full=False,
-        output_article_summarised=False,
+        output_article_summarised=True,
         output_only_articles_passing_screening=False,
         output_only_articles_passing_screening_specific=True,
         output_articles_individually=True,
         coding_output_filename="batch7_quota_screening_focussed_screening.tsv",
-        html_output_filename="batch7all_focussed_screening.html",
+        html_output_filename="batch7all_focussed_screening_short_summaries.html",
         date_range_type="final",
         human_coding=True
     )
