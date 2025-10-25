@@ -403,8 +403,6 @@ def screen_and_code_article(article, do_screening=True, do_coding=False, use_owe
     if do_screening:
         article["screening_codes"] = full_screening_via_cache(article)
         s_c = article["screening_codes"]
-        if use_owe_focussed and use_owe_specific:
-            warnings.warn("Both use_owe_focussed and use_owe_specific are True; this is not recommended and may break something", UserWarning)
         if use_owe_focussed or get_owe_focussed_llm_coding:
             article["owe_focussed_llm"] = owe_focussed_via_cache(article)
             print("OWE FOCUSSED LLM is " + article["owe_focussed_llm"])
