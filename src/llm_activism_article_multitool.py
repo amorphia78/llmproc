@@ -757,7 +757,7 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation = True, output_rtf_for_corrections = False ):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation = True, output_side_by_side = False ):
     if output_individually:
         os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
@@ -873,7 +873,7 @@ def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCod
                     return parts[1]
     return None
 
-def human_code_article(article, html_output_filename):
+def human_code_article(article):
     if article["passes_screening"] != "Yes":
         return None
     database_file = "finalBatch7HumanCoding.tsv"
@@ -949,7 +949,7 @@ def handle_owe_specific_coding(article, human_coding, check_human_coding, html_o
             print("This article requires human coding but none exists in the database.")
             sys.exit(1)
         elif human_coding:
-            human_code = human_code_article(article, html_output_filename)
+            human_code = human_code_article(article)
     article["owe_specific_human"] = human_code if human_code is not None else ""
     if article["owe_specific_human"] == "Owe specific":
         article["passes_screening_specific"] = "Yes"
@@ -994,7 +994,7 @@ def process_articles(
         quota_pad=0,
         human_coding=False,
         check_human_coding="no",
-        output_rtf_for_corrections=False
+        output_side_by_side=False
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1082,7 +1082,7 @@ def process_articles(
                     output_article(html_output_filename, article, output_article_full, output_article_summarised,
                                    output_picture_tags, output_articles_individually, suppress_id_in_html,
                                    append_to_compilation = False,
-                                   output_rtf_for_corrections = output_rtf_for_corrections )
+                                   output_side_by_side = output_side_by_side )
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
