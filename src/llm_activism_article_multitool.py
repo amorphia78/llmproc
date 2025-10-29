@@ -419,6 +419,8 @@ def screen_and_code_article(article, do_screening=True, do_coding=False, use_owe
             # print("OWE SPECIFIC is " + article["owe_specific_llm"])
         else:
             article["owe_specific_llm"] = "Unused"
+            article["owe_specific_human"] = "Unused"
+            article["passes_screening_specific"] = "Unused"
         if owe == "No" or s_c["LETTER"] == "Yes" or s_c["ROUNDUP"] == "Yes" or s_c["NON-UK EDITION"] == "Yes" or s_c["VIDEO"] == "Yes":
             article["passes_screening"] = "No"
         else:
@@ -762,7 +764,7 @@ def output_article(filename, article, output_article_full, output_article_summar
         formatted_output = formatted_article_output(article, False)
         if output_individually:
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}_original.html"
-            print(f"OUTPUT_INDIVIDUAL: {individual_filename}")
+            #print(f"Outputting individual article: {individual_filename}")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_output)
         if append_to_compilation:
@@ -770,10 +772,10 @@ def output_article(filename, article, output_article_full, output_article_summar
                 f.write(formatted_output)
     if output_article_summarised:
         if article["summarised"]:
-            print(f"Outputting formatted (summarised), ID: {article['id']}")
+            #print(f"Outputting formatted (summarised), ID: {article['id']}")
             html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html )
         else:
-            print(f"Outputting formatted (original because no summary), ID: {article['id']}")
+            #print(f"Outputting formatted (original because no summary), ID: {article['id']}")
             html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html )
         if output_individually:
             suffix = "_summary" if article["summarised"] else "_original"
@@ -863,7 +865,6 @@ def check_quotas_met(quota_tracker, source_quotas):
     return True
 
 def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCoding.tsv"):
-    """Load existing human coding from database file"""
     if os.path.exists(database_file):
         with open(database_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -872,13 +873,11 @@ def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCod
                     return parts[1]
     return None
 
-
 def human_code_article(article, html_output_filename):
     if article["passes_screening"] != "Yes":
         return None
     database_file = "finalBatch7HumanCoding.tsv"
     article_id = article["id"]
-    # Check if article already has a code in the database
     existing_codes = {}
     if os.path.exists(database_file):
         with open(database_file, 'r', encoding='utf-8') as f:
@@ -914,6 +913,53 @@ def human_code_article(article, html_output_filename):
                 return code_value  # Return the code value for immediate use
         time.sleep(0.1)  # Check every 100ms instead of spinning constantly
 
+def check_human_code_display(article, database_file="finalBatch7HumanCoding.tsv"):
+    article_id = article["id"]
+    existing_code = load_human_coding_for_article(article_id, database_file)
+    if existing_code is None:
+        print(f"\nERROR: No human coding found in database for article {article_id}")
+        print("This article requires human coding but none exists in the database.")
+        sys.exit(1)
+    html_filename = f"output_folders/individual_article_output/{sanitise_name(article_id)}_original.html"
+    full_path = os.path.abspath(html_filename)
+    subprocess.Popen([
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "--new-window",
+        f"file:///{full_path}"
+    ])
+    print(f"\nArticle {article_id}")
+    print(f"Existing human coding: {existing_code}")
+    print("Press any key to continue...")
+    while True:
+        if msvcrt.kbhit():
+            key = msvcrt.getch()
+            return existing_code
+        time.sleep(0.1)
+
+def handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html):
+    human_code = load_human_coding_for_article(article["id"])
+    if human_coding or check_human_coding != "no":
+        output_article(html_output_filename, article, output_article_full=True,
+                       output_article_summarised=False, output_picture_tags=output_picture_tags,
+                       output_individually=True, suppress_id_in_html=suppress_id_in_html,
+                       append_to_compilation=False)
+    if human_code is None:
+        if check_human_coding != "no":
+            print(f"\nERROR: No human coding found in database for article {article['id']}")
+            print("This article requires human coding but none exists in the database.")
+            sys.exit(1)
+        elif human_coding:
+            human_code = human_code_article(article, html_output_filename)
+    article["owe_specific_human"] = human_code if human_code is not None else ""
+    if article["owe_specific_human"] == "Owe specific":
+        article["passes_screening_specific"] = "Yes"
+    else:
+        article["passes_screening_specific"] = "No"
+    if check_human_coding == "all":
+        check_human_code_display(article, "finalBatch7HumanCoding.tsv")
+    elif check_human_coding == "passes" and article["passes_screening_specific"] == "Yes":
+        check_human_code_display(article, "finalBatch7HumanCoding.tsv")
+
 def process_articles(
         key,
         debug_screening_process=False,
@@ -947,6 +993,7 @@ def process_articles(
         source_quotas=None,
         quota_pad=0,
         human_coding=False,
+        check_human_coding="no",
         output_rtf_for_corrections=False
 ):
     if config_file != "none":
@@ -1013,14 +1060,11 @@ def process_articles(
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
             if do_screening and use_owe_specific:
-                human_code = load_human_coding_for_article(article["id"])
-                if human_coding and human_code is None and article["passes_screening"] == "Yes":
-                    output_article(html_output_filename, article, output_article_full = True, output_article_summarised = False, output_picture_tags = output_picture_tags, output_individually = True, suppress_id_in_html = suppress_id_in_html, append_to_compilation = False )
-                    human_code = human_code_article(article, html_output_filename)
-                article["owe_specific_human"] = human_code if human_code is not None else ""
-                if article["passes_screening"] == "Yes" and article["owe_specific_human"] == "Owe specific":
-                    article["passes_screening_specific"] = "Yes"
+                if article["passes_screening"] == "Yes":
+                    handle_owe_specific_coding(article, human_coding, check_human_coding,
+                                               html_output_filename, output_picture_tags, suppress_id_in_html)
                 else:
+                    article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
                 if do_summarising and article["passes_screening_specific"] == "Yes":
                     do_summarization_for_article(article, do_coding, very_short_summary)
