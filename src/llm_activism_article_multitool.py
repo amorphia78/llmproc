@@ -567,8 +567,10 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     '''
     return image_html
 
-def formatted_article_output(article, output_summary = False, output_picture_tags = False, suppress_id_in_html = False ):
-    identity_code, source, title, subtitle, images = article["id"], article["source"], article["title"], article["subtitle"], article["image"]
+def formatted_article_output(article, output_summary=False, output_picture_tags=False,
+                             suppress_id_in_html=False, pad_margins=True, complete_html=True):
+    identity_code, source, title, subtitle, images = article["id"], article["source"], article["title"], article[
+        "subtitle"], article["image"]
     if not output_summary:
         body = article["text"]
     else:
@@ -582,12 +584,17 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
     if "scraped_image_missing" not in article:
         article["scraped_image_missing"] = False
     first_half, second_half = split_string_at_midpoint(body)
-    html_output = "<html><head><style>body { max-width: 800px; margin: 0 auto; padding: 20px; }</style></head><body><br>"
+    if complete_html:
+        if pad_margins:
+            html_output = "<html><head><style>body { max-width: 800px; margin: 0 auto; padding: 20px; }</style></head><body><br>"
+        else:
+            html_output = "<html><head></head><body><br>"
+    else:
+        html_output = ""
     if not suppress_id_in_html:
         html_output += f"<h2>ID: {identity_code}</h2>"
     else:
         html_output += f"\n<!--Article ID: {identity_code}-->\n"
-    #html_output += f"<h2>Source: {source}</h2>"
     html_output += f'''
           <img src="https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/outlet_logos/{source}.png" alt="Outlet logo" style="display: block; margin: 0 auto; width: 25%; min-width: 150px;">
         '''
@@ -621,10 +628,77 @@ def formatted_article_output(article, output_summary = False, output_picture_tag
             pass
         case _:
             html_output += image_strings[2]
-    html_output += "</body></html>"
+    if complete_html:
+        html_output += "</body></html>"
     return html_output
 
-#https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/article_images/BBC/BBC_2020-09-01_Arrests-as-Extinction_img1.webp
+def start_side_by_side_html(filename):
+    """Start a side-by-side comparison HTML file"""
+    html_header = """<html>
+<head>
+<style>
+body { 
+    margin: 20px;
+    font-family: Arial, sans-serif;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+td {
+    width: 50%;
+    vertical-align: top;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+</style>
+</head>
+<body>
+<h1>Side-by-Side Article Comparison</h1>
+<table>
+"""
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(html_header)
+
+
+def end_side_by_side_html(filename):
+    """Close the side-by-side comparison HTML file"""
+    html_footer = """</table>
+</body>
+</html>
+"""
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(html_footer)
+
+
+def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_in_html):
+    """Append a row with full and summarised versions side by side"""
+    full_html = formatted_article_output(article, output_summary=False,
+                                         output_picture_tags=output_picture_tags,
+                                         suppress_id_in_html=suppress_id_in_html,
+                                         pad_margins=False,
+                                         complete_html=False)
+
+    if article["summarised"]:
+        summary_html = formatted_article_output(article, output_summary=True,
+                                                output_picture_tags=output_picture_tags,
+                                                suppress_id_in_html=suppress_id_in_html,
+                                                pad_margins=False,
+                                                complete_html=False)
+    else:
+        summary_html = formatted_article_output(article, output_summary=False,
+                                                output_picture_tags=output_picture_tags,
+                                                suppress_id_in_html=suppress_id_in_html,
+                                                pad_margins=False,
+                                                complete_html=False)
+
+    row_html = f"""<tr>
+<td>{full_html}</td>
+<td>{summary_html}</td>
+</tr>
+"""
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(row_html)
 
 skip_list = ["https://www.theguardian.com/music/live/2022/jun/24/glastonbury-live-2022-friday?filterKeyEvents=false&page=with:block-62b5c8e18f0875bb61abafc0",
 "https://www.theguardian.com/books/2022/may/19/ruth-pen-by-emilie-pine-review-a-tale-of-two-lives" ] #These are duplicates
@@ -757,14 +831,13 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation = True, output_side_by_side = False ):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation=True, compilation_format="none", side_by_side_filename=None):
     if output_individually:
         os.makedirs("output_folders/individual_article_output", exist_ok=True)
     if output_article_full:
-        formatted_output = formatted_article_output(article, False)
+        formatted_output = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
         if output_individually:
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}_original.html"
-            #print(f"Outputting individual article: {individual_filename}")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_output)
         if append_to_compilation:
@@ -772,11 +845,9 @@ def output_article(filename, article, output_article_full, output_article_summar
                 f.write(formatted_output)
     if output_article_summarised:
         if article["summarised"]:
-            #print(f"Outputting formatted (summarised), ID: {article['id']}")
-            html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html )
+            html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
         else:
-            #print(f"Outputting formatted (original because no summary), ID: {article['id']}")
-            html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html )
+            html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
         if output_individually:
             suffix = "_summary" if article["summarised"] else "_original"
             individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}{suffix}.html"
@@ -785,6 +856,8 @@ def output_article(filename, article, output_article_full, output_article_summar
         if append_to_compilation:
             with open(filename, 'a', encoding='utf-8') as f:
                 f.write(html_content)
+    if compilation_format == "side-by-side" and side_by_side_filename is not None:
+        append_side_by_side_row(side_by_side_filename, article, output_picture_tags, suppress_id_in_html)
 
 def output_word_counts(article):
     filename = f"output_folders/article_word_count_output/counts_{timestamp}.tsv"
@@ -994,7 +1067,8 @@ def process_articles(
         quota_pad=0,
         human_coding=False,
         check_human_coding="no",
-        output_side_by_side=False
+        compilation_format="none",
+        side_by_side_output_filename="unset"
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1004,6 +1078,15 @@ def process_articles(
         coding_output_filename = f"coding_output_{timestamp}.tsv"
     if html_output_filename == "unset":
         html_output_filename = f"html_output_{timestamp}.tsv"
+        # Validate compilation_format parameters
+    if compilation_format == "side-by-side":
+        if not (output_article_full and output_article_summarised):
+            print(
+                "ERROR: compilation_format='Side-by-side' requires both output_article_full=True and output_article_summarised=True")
+            sys.exit(1)
+        if side_by_side_output_filename == "unset":
+            side_by_side_output_filename = f"side_by_side_output_{timestamp}.html"
+        start_side_by_side_html(side_by_side_output_filename)
     if debug_screening_process:
         global debug_log
         debug_log = True
@@ -1079,10 +1162,7 @@ def process_articles(
                 passes_chosen_screening = True
             if passes_chosen_screening:
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised,
-                                   output_picture_tags, output_articles_individually, suppress_id_in_html,
-                                   append_to_compilation = False,
-                                   output_side_by_side = output_side_by_side )
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised,output_picture_tags, output_articles_individually, suppress_id_in_html, append_to_compilation=True,compilation_format=compilation_format, side_by_side_filename=side_by_side_output_filename if compilation_format == "side-by-side" else None)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
@@ -1102,6 +1182,8 @@ def process_articles(
             if number_completed >= stop_after:
                 print(f"Ending because processed {number_completed} articles.")
                 break
+    if compilation_format == "side-by-side":
+        end_side_by_side_html(side_by_side_output_filename)
     if quota_tracker is not None and not check_quotas_met(quota_tracker, source_quotas):
         print("\nWARNING: Ran out of articles before meeting all quotas!")
         print("Current quota status:")
