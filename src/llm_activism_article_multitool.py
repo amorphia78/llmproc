@@ -622,7 +622,9 @@ def formatted_article_output(article, output_summary=False, output_picture_tags=
             html_output += image_strings[0]
         case _:
             html_output += image_strings[1]
-    html_output += format_html_body_text(second_half, "double")
+    formatted_second_half = format_html_body_text(second_half, "double")
+    formatted_second_half = ("<p>" + formatted_second_half.removeprefix("<p><br><br>")) if formatted_second_half.startswith("<p><br><br>") else formatted_second_half
+    html_output += formatted_second_half
     match n_images:
         case 0 | 1 | 2:
             pass
@@ -831,7 +833,7 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, legacy_compilation=True, compilation_format="none", compilation_filename=None, individual_output_base_path="output_folders/individual_article_output"):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, legacy_compilation=True, compilation_format="none", compilation_inclusion_criterion=None, compilation_filename=None, individual_output_base_path="output_folders/individual_article_output"):
     subdir = None
     base_dir = None
     if output_individually:
@@ -867,14 +869,16 @@ def output_article(filename, article, output_article_full, output_article_summar
                 f.write(html_content)
     if output_individually and subdir is not None:
         if article["summarised"]:
-            production_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
+            production_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
         else:
-            production_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
+            production_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
         individual_filename = os.path.join(base_dir, "production", f"{sanitise_name(article['id'])}.html")
         with open(individual_filename, 'w', encoding='utf-8') as f:
             f.write(production_content)
-    if compilation_format == "side-by-side" and compilation_filename is not None:
-        append_side_by_side_row(compilation_filename, article, output_picture_tags, suppress_id_in_html)
+    if compilation_inclusion_criterion is not None:
+        if article[compilation_inclusion_criterion] == "Yes":
+            if compilation_format == "side-by-side" and compilation_filename is not None:
+                append_side_by_side_row(compilation_filename, article, output_picture_tags, suppress_id_in_html)
 
 def output_word_counts(article):
     filename = f"output_folders/article_word_count_output/counts_{timestamp}.tsv"
@@ -1060,10 +1064,9 @@ def process_articles(
         output_article_summarised=False,
         output_article_summary_process=False,
         output_articles_individually=False,
-        output_only_articles_passing_screening=False,
-        output_only_articles_passing_screening_specific=False,
         compilation_format="none",
         compilation_output_filename="unset",
+        compilation_inclusion_criterion="passes_screening_specific",
         individual_output_base_path="output_folders/individual_article_output",
         human_coding_database_file="finalBatch7HumanCoding.tsv",
         output_detailed_word_counts=False,
@@ -1165,15 +1168,8 @@ def process_articles(
             elif do_summarising:
                 if not do_screening or article["passes_screening"] == "Yes":
                     do_summarization_for_article(article, do_coding, very_short_summary)
-            if output_only_articles_passing_screening_specific:
-                passes_chosen_screening = article["passes_screening_specific"] == "Yes"
-            elif output_only_articles_passing_screening:
-                passes_chosen_screening = article["passes_screening"] == "Yes"
-            else:
-                passes_chosen_screening = True
-            if passes_chosen_screening:
-                if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=True, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, individual_output_base_path=individual_output_base_path)
+            if output_article_full or output_article_summarised:
+                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=True, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")

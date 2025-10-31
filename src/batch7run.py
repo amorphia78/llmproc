@@ -47,8 +47,6 @@ multitool.process_articles(
         very_short_summary=False,
         output_article_full=True,
         output_article_summarised=True,
-        output_only_articles_passing_screening=True,
-        output_only_articles_passing_screening_specific=False,
         individual_output_base_path="../coding_batches/batch7/batch7_individual_articles",
         human_coding_database_file="../coding_batches/batch7/batch7_human_coding.tsv",
         output_articles_individually=True,
@@ -56,7 +54,7 @@ multitool.process_articles(
         html_output_filename="../coding_batches/batch7/batch7all.html",
         compilation_format="side-by-side",
         compilation_output_filename="../coding_batches/batch7/batch7_side_by_side.html",
-        compilation_inclusion_condition
+        compilation_inclusion_criterion="passes_screening_specific",
         date_range_type="final",
         human_coding=True,
         check_human_coding="no",
