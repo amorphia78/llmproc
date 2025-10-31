@@ -1169,7 +1169,7 @@ def process_articles(
                 if not do_screening or article["passes_screening"] == "Yes":
                     do_summarization_for_article(article, do_coding, very_short_summary)
             if output_article_full or output_article_summarised:
-                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=True, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path)
+                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
