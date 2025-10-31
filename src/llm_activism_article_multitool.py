@@ -513,9 +513,7 @@ def generate_image_html_github_url(article, image_data, output_picture_tags):
 
 
 def generate_image_html_outlet_url(article, image_data, output_picture_tags):
-    github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
-
-    # Get the image URL
+    # Get the image URL from the outlet
     if "url_large" in image_data:
         image_path = image_data["url_large"]
     elif "url" in image_data:
@@ -525,28 +523,13 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
         image_path = ""
 
     # Clean Telegraph URLs that have the /web/timestamp prefix
-    # Example: https://www.telegraph.co.uk/web/20240613195129im_/https://www.telegraph.co.uk/content/...
-    # Should become: https://www.telegraph.co.uk/content/...
     if image_path and "telegraph.co.uk/web/" in image_path:
         match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_path)
         if match:
             image_path = match.group(1)
 
-    # Try to build GitHub path if local_name exists
-    local_name = image_data.get('local_name')
-    local_path = image_data.get('local_path', '')
-
-    # Only use GitHub URL if we have a local_name, otherwise use outlet URL
-    if local_name:
-        # Check if local_path is at the start of local_name
-        if local_name.startswith(local_path):
-            image_path = github_image_root + local_name
-        else:
-            # If not, combine local_path and local_name
-            image_path = github_image_root + local_path + '/' + local_name
-        # Remove any double slashes that might occur, except in https://
-        image_path = re.sub(r'(?<!:)//+', '/', image_path)
-    # else: keep using the outlet URL (image_path already set above)
+    # NOTE: Intentionally NOT using GitHub URLs - we want outlet URLs
+    # The local_name and local_path fields are ignored in this function
 
     caption = image_data.get('caption', '')
 
