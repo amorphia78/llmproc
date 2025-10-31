@@ -831,42 +831,50 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation=True, compilation_format="none", side_by_side_filename=None, individual_output_base_path="output_folders/individual_article_output"):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, legacy_compilation=True, compilation_format="none", compilation_filename=None, individual_output_base_path="output_folders/individual_article_output"):
     subdir = None
-    output_dir = None
+    base_dir = None
     if output_individually:
-        # Determine subdirectory based on screening status
         if article.get("passes_screening_specific") == "Yes":
             subdir = "owe_specific"
         elif article.get("passes_screening") == "Yes":
             subdir = "owe_general"
         if subdir is not None:
-            output_dir = os.path.join(individual_output_base_path, subdir)
-            os.makedirs(output_dir, exist_ok=True)
+            base_dir = os.path.join(individual_output_base_path, subdir)
+            os.makedirs(os.path.join(base_dir, "original"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "summarised"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "production"), exist_ok=True)
     if output_article_full:
         formatted_output = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
         if output_individually and subdir is not None:
-            individual_filename = os.path.join(output_dir, f"{sanitise_name(article['id'])}_original.html")
+            individual_filename = os.path.join(base_dir, "original", f"{sanitise_name(article['id'])}.html")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_output)
-        if append_to_compilation:
+        if legacy_compilation:
             with open(filename, 'a', encoding='utf-8') as f:
                 f.write(formatted_output)
     if output_article_summarised:
         if article["summarised"]:
             html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
+            if output_individually and subdir is not None:
+                individual_filename = os.path.join(base_dir, "summarised", f"{sanitise_name(article['id'])}.html")
+                with open(individual_filename, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
         else:
             html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
-        if output_individually and subdir is not None:
-            suffix = "_summary" if article["summarised"] else "_original"
-            individual_filename = os.path.join(output_dir, f"{sanitise_name(article['id'])}{suffix}.html")
-            with open(individual_filename, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-        if append_to_compilation:
+        if legacy_compilation:
             with open(filename, 'a', encoding='utf-8') as f:
                 f.write(html_content)
-    if compilation_format == "side-by-side" and side_by_side_filename is not None:
-        append_side_by_side_row(side_by_side_filename, article, output_picture_tags, suppress_id_in_html)
+    if output_individually and subdir is not None:
+        if article["summarised"]:
+            production_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
+        else:
+            production_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
+        individual_filename = os.path.join(base_dir, "production", f"{sanitise_name(article['id'])}.html")
+        with open(individual_filename, 'w', encoding='utf-8') as f:
+            f.write(production_content)
+    if compilation_format == "side-by-side" and compilation_filename is not None:
+        append_side_by_side_row(compilation_filename, article, output_picture_tags, suppress_id_in_html)
 
 def output_word_counts(article):
     filename = f"output_folders/article_word_count_output/counts_{timestamp}.tsv"
@@ -955,6 +963,18 @@ def load_human_coding_for_article(article_id, database_file):
                     return parts[1]
     return None
 
+def display_article_for_human_coding(article, output_picture_tags=False, suppress_id_in_html=False):
+    output_dir = "output_folders/coding_review"
+    os.makedirs(output_dir, exist_ok=True)
+    html_content = formatted_article_output(article, output_summary=False, output_picture_tags=output_picture_tags, suppress_id_in_html=suppress_id_in_html, pad_margins=True, complete_html=True)
+    filename = f"{sanitise_name(article['id'])}.html"
+    filepath = os.path.join(output_dir, filename)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    full_path = os.path.abspath(filepath)
+    subprocess.Popen([r"C:\Program Files\Google\Chrome\Application\chrome.exe", "--new-window", f"file:///{full_path}"])
+    return filepath
+
 def human_code_article(article, database_file):
     if article["passes_screening"] != "Yes":
         return None
@@ -975,13 +995,7 @@ def human_code_article(article, database_file):
         'g': "Owe grey-area specific",
         's': "Owe specific"
     }
-    html_filename = f"output_folders/individual_article_output/{sanitise_name(article_id)}_original.html"
-    full_path = os.path.abspath(html_filename)
-    subprocess.Popen([
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        "--new-window",
-        f"file:///{full_path}"
-    ])
+    display_article_for_human_coding(article)
     print(f"\nArticle coding needed - please press a key (N/F/U/G/S)")
     while True:
         if msvcrt.kbhit():
@@ -991,8 +1005,8 @@ def human_code_article(article, database_file):
                 print(f"Coded as: {code_value}")
                 with open(database_file, 'a', encoding='utf-8') as f:
                     f.write(f"{article_id}\t{code_value}\n")
-                return code_value  # Return the code value for immediate use
-        time.sleep(0.1)  # Check every 100ms instead of spinning constantly
+                return code_value
+        time.sleep(0.1)
 
 def check_human_code_display(article, database_file):
     article_id = article["id"]
@@ -1001,13 +1015,7 @@ def check_human_code_display(article, database_file):
         print(f"\nERROR: No human coding found in database for article {article_id}")
         print("This article requires human coding but none exists in the database.")
         sys.exit(1)
-    html_filename = f"output_folders/individual_article_output/{sanitise_name(article_id)}_original.html"
-    full_path = os.path.abspath(html_filename)
-    subprocess.Popen([
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        "--new-window",
-        f"file:///{full_path}"
-    ])
+    display_article_for_human_coding(article)
     print(f"\nArticle {article_id}")
     print(f"Existing human coding: {existing_code}")
     print("Press any key to continue...")
@@ -1017,13 +1025,8 @@ def check_human_code_display(article, database_file):
             return existing_code
         time.sleep(0.1)
 
-def handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html, database_file, individual_output_base_path):
+def handle_owe_specific_coding( article, human_coding, check_human_coding, database_file ):
     human_code = load_human_coding_for_article(article["id"], database_file)
-    if human_coding or check_human_coding != "no":
-        output_article(html_output_filename, article, output_article_full=True,
-                       output_article_summarised=False, output_picture_tags=output_picture_tags,
-                       output_individually=True, suppress_id_in_html=suppress_id_in_html,
-                       append_to_compilation=False, individual_output_base_path=individual_output_base_path)
     if human_code is None:
         if check_human_coding != "no":
             print(f"\nERROR: No human coding found in database for article {article['id']}")
@@ -1036,9 +1039,8 @@ def handle_owe_specific_coding(article, human_coding, check_human_coding, html_o
         article["passes_screening_specific"] = "Yes"
     else:
         article["passes_screening_specific"] = "No"
-    if check_human_coding == "all":
-        check_human_code_display(article, database_file)
-    elif check_human_coding == "passes" and article["passes_screening_specific"] == "Yes":
+    if check_human_coding == "all" or ( check_human_coding == "passes" and article["passes_screening_specific"] == "Yes" ):
+        display_article_for_human_coding(article)
         check_human_code_display(article, database_file)
 
 def process_articles(
@@ -1061,7 +1063,7 @@ def process_articles(
         output_only_articles_passing_screening=False,
         output_only_articles_passing_screening_specific=False,
         compilation_format="none",
-        side_by_side_output_filename="unset",
+        compilation_output_filename="unset",
         individual_output_base_path="output_folders/individual_article_output",
         human_coding_database_file="finalBatch7HumanCoding.tsv",
         output_detailed_word_counts=False,
@@ -1094,9 +1096,9 @@ def process_articles(
             print(
                 "ERROR: compilation_format='Side-by-side' requires both output_article_full=True and output_article_summarised=True")
             sys.exit(1)
-        if side_by_side_output_filename == "unset":
-            side_by_side_output_filename = f"side_by_side_output_{timestamp}.html"
-        start_side_by_side_html(side_by_side_output_filename)
+        if compilation_output_filename == "unset":
+            compilation_output_filename = f"side_by_side_output_{timestamp}.html"
+        start_side_by_side_html(compilation_output_filename)
     if debug_screening_process:
         global debug_log
         debug_log = True
@@ -1154,7 +1156,7 @@ def process_articles(
             if output_detailed_word_counts: output_word_counts(article)
             if do_screening and use_owe_specific:
                 if article["passes_screening"] == "Yes":
-                    handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html, human_coding_database_file, individual_output_base_path)
+                    handle_owe_specific_coding( article, human_coding, check_human_coding, human_coding_database_file )
                 else:
                     article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
@@ -1171,7 +1173,7 @@ def process_articles(
                 passes_chosen_screening = True
             if passes_chosen_screening:
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, append_to_compilation=True, compilation_format=compilation_format, side_by_side_filename=side_by_side_output_filename if compilation_format == "side-by-side" else None, individual_output_base_path=individual_output_base_path)
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=True, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
@@ -1191,7 +1193,7 @@ def process_articles(
                 print(f"Ending because processed {number_completed} articles.")
                 break
     if compilation_format == "side-by-side":
-        end_side_by_side_html(side_by_side_output_filename)
+        end_side_by_side_html(compilation_output_filename)
     if quota_tracker is not None and not check_quotas_met(quota_tracker, source_quotas):
         print("\nWARNING: Ran out of articles before meeting all quotas!")
         print("Current quota status:")
