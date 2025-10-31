@@ -831,13 +831,22 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation=True, compilation_format="none", side_by_side_filename=None):
+def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,output_individually=False, suppress_id_in_html=False, append_to_compilation=True, compilation_format="none", side_by_side_filename=None, individual_output_base_path="output_folders/individual_article_output"):
+    subdir = None
+    output_dir = None
     if output_individually:
-        os.makedirs("output_folders/individual_article_output", exist_ok=True)
+        # Determine subdirectory based on screening status
+        if article.get("passes_screening_specific") == "Yes":
+            subdir = "owe_specific"
+        elif article.get("passes_screening") == "Yes":
+            subdir = "owe_general"
+        if subdir is not None:
+            output_dir = os.path.join(individual_output_base_path, subdir)
+            os.makedirs(output_dir, exist_ok=True)
     if output_article_full:
         formatted_output = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
-        if output_individually:
-            individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}_original.html"
+        if output_individually and subdir is not None:
+            individual_filename = os.path.join(output_dir, f"{sanitise_name(article['id'])}_original.html")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(formatted_output)
         if append_to_compilation:
@@ -848,9 +857,9 @@ def output_article(filename, article, output_article_full, output_article_summar
             html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
         else:
             html_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
-        if output_individually:
+        if output_individually and subdir is not None:
             suffix = "_summary" if article["summarised"] else "_original"
-            individual_filename = f"output_folders/individual_article_output/{sanitise_name(article['id'])}{suffix}.html"
+            individual_filename = os.path.join(output_dir, f"{sanitise_name(article['id'])}{suffix}.html")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(html_content)
         if append_to_compilation:
@@ -937,7 +946,7 @@ def check_quotas_met(quota_tracker, source_quotas):
             return False
     return True
 
-def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCoding.tsv"):
+def load_human_coding_for_article(article_id, database_file):
     if os.path.exists(database_file):
         with open(database_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -946,10 +955,9 @@ def load_human_coding_for_article(article_id, database_file="finalBatch7HumanCod
                     return parts[1]
     return None
 
-def human_code_article(article):
+def human_code_article(article, database_file):
     if article["passes_screening"] != "Yes":
         return None
-    database_file = "finalBatch7HumanCoding.tsv"
     article_id = article["id"]
     existing_codes = {}
     if os.path.exists(database_file):
@@ -986,7 +994,7 @@ def human_code_article(article):
                 return code_value  # Return the code value for immediate use
         time.sleep(0.1)  # Check every 100ms instead of spinning constantly
 
-def check_human_code_display(article, database_file="finalBatch7HumanCoding.tsv"):
+def check_human_code_display(article, database_file):
     article_id = article["id"]
     existing_code = load_human_coding_for_article(article_id, database_file)
     if existing_code is None:
@@ -1009,29 +1017,29 @@ def check_human_code_display(article, database_file="finalBatch7HumanCoding.tsv"
             return existing_code
         time.sleep(0.1)
 
-def handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html):
-    human_code = load_human_coding_for_article(article["id"])
+def handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html, database_file, individual_output_base_path):
+    human_code = load_human_coding_for_article(article["id"], database_file)
     if human_coding or check_human_coding != "no":
         output_article(html_output_filename, article, output_article_full=True,
                        output_article_summarised=False, output_picture_tags=output_picture_tags,
                        output_individually=True, suppress_id_in_html=suppress_id_in_html,
-                       append_to_compilation=False)
+                       append_to_compilation=False, individual_output_base_path=individual_output_base_path)
     if human_code is None:
         if check_human_coding != "no":
             print(f"\nERROR: No human coding found in database for article {article['id']}")
             print("This article requires human coding but none exists in the database.")
             sys.exit(1)
         elif human_coding:
-            human_code = human_code_article(article)
+            human_code = human_code_article(article, database_file)
     article["owe_specific_human"] = human_code if human_code is not None else ""
     if article["owe_specific_human"] == "Owe specific":
         article["passes_screening_specific"] = "Yes"
     else:
         article["passes_screening_specific"] = "No"
     if check_human_coding == "all":
-        check_human_code_display(article, "finalBatch7HumanCoding.tsv")
+        check_human_code_display(article, database_file)
     elif check_human_coding == "passes" and article["passes_screening_specific"] == "Yes":
-        check_human_code_display(article, "finalBatch7HumanCoding.tsv")
+        check_human_code_display(article, database_file)
 
 def process_articles(
         key,
@@ -1052,6 +1060,10 @@ def process_articles(
         output_articles_individually=False,
         output_only_articles_passing_screening=False,
         output_only_articles_passing_screening_specific=False,
+        compilation_format="none",
+        side_by_side_output_filename="unset",
+        individual_output_base_path="output_folders/individual_article_output",
+        human_coding_database_file="finalBatch7HumanCoding.tsv",
         output_detailed_word_counts=False,
         article_selection="random",
         article_exclusion_list="none",
@@ -1067,8 +1079,6 @@ def process_articles(
         quota_pad=0,
         human_coding=False,
         check_human_coding="no",
-        compilation_format="none",
-        side_by_side_output_filename="unset"
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1144,8 +1154,7 @@ def process_articles(
             if output_detailed_word_counts: output_word_counts(article)
             if do_screening and use_owe_specific:
                 if article["passes_screening"] == "Yes":
-                    handle_owe_specific_coding(article, human_coding, check_human_coding,
-                                               html_output_filename, output_picture_tags, suppress_id_in_html)
+                    handle_owe_specific_coding(article, human_coding, check_human_coding, html_output_filename, output_picture_tags, suppress_id_in_html, human_coding_database_file, individual_output_base_path)
                 else:
                     article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
@@ -1162,7 +1171,7 @@ def process_articles(
                 passes_chosen_screening = True
             if passes_chosen_screening:
                 if output_article_full or output_article_summarised:
-                    output_article(html_output_filename, article, output_article_full, output_article_summarised,output_picture_tags, output_articles_individually, suppress_id_in_html, append_to_compilation=True,compilation_format=compilation_format, side_by_side_filename=side_by_side_output_filename if compilation_format == "side-by-side" else None)
+                    output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, append_to_compilation=True, compilation_format=compilation_format, side_by_side_filename=side_by_side_output_filename if compilation_format == "side-by-side" else None, individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
@@ -1172,11 +1181,10 @@ def process_articles(
                     total_required = sum(source_quotas.values())
                     print( f"Quotas: {', '.join(f'{s}: {quota_tracker.get(s, 0)}/{source_quotas.get(s, 0)}' for s in all_sources)}")
                     print(f"Total: {total_tracker}/{total_required}")
-            if not output_only_articles_passing_screening or article["passes_screening"] == "Yes":
-                if do_screening or do_coding:
-                    output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
-                if output_article_summary_process and do_summarising:
-                    output_summary_process(article)
+            if do_screening or do_coding:
+                output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
+            if output_article_summary_process and do_summarising:
+                output_summary_process(article)
         if count_type == "any" or (count_type == "pass_screening" and article["passes_screening"] == "Yes"):
             number_completed += 1
             if number_completed >= stop_after:
