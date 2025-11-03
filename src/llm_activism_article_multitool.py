@@ -221,9 +221,9 @@ def summarise_article_via_cache(article, very_short_summary):
 def do_summarisation_check(article):
     content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["summary"]
     prompt = pas.prompt_check_summary_intro + content + pas.prompt_check_summary_end
-    print(f"PROMPT: {prompt}")
-    response = llm.send_prompt(prompt, "processor", article["title"])
+    response = llm.send_prompt(prompt, "processor")
     if response.startswith( ("pass", "consistency_issue", "form_issue", "new_material_issue", ) ):
+        response = re.sub(r'\s+', ' ', response).strip()
         return response
     else:
         raise ValueError(f"Summary check response malformed: {response}")
@@ -806,7 +806,7 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             article["owe_specific_human"],
             article["passes_screening"],
             article["passes_screening_specific"],
-            article.get("summary_check","None")
+            article.get("summary_check","no_check")
         ]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))

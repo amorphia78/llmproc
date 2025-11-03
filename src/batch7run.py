@@ -17,11 +17,11 @@ real_quotas = {
 }
 
 test_quotas = {
-    "BBC": 1,
-    "The-Guardian": 1,
-    "Daily-Mail": 0,
-    "Sky": 0,
-    "Metro": 0,
+    "BBC": 4,
+    "The-Guardian": 2,
+    "Daily-Mail": 2,
+    "Sky": 1,
+    "Metro": 1,
     "Sun": 0,
     "Telegraph": 0,
     "The-Times": 0,
@@ -36,7 +36,7 @@ multitool.process_articles(
         stop_after=999999,
         article_selection="random",
         article_order_random_seed=7,
-        source_quotas=test_quotas,
+        source_quotas=real_quotas,
         quota_pad=0,
         get_owe_focussed_llm_coding=True,
         use_owe_focussed=True,
