@@ -181,11 +181,13 @@ def sanitise_ids(articles):
         warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
-def do_summarization_for_article(article, do_coding, very_short_summary):
+def do_summarisation_for_article(article, do_coding, very_short_summary, check_summary):
     if article["text_word_count"] > 350 or very_short_summary:
         article["summary"] = summarise_article_via_cache(article, very_short_summary)
         article["summarised"] = True
         article["summary_word_count"] = count_words(article["summary"])
+        if check_summary:
+            article["summary_check"] = do_summary_check_via_cache(article)
         if do_coding:
             article["summary_coded"] = code_article(article, "summary")
             article["summary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["summary_coded"])
@@ -215,6 +217,19 @@ def summarise_article(article, very_short_summary):
 
 def summarise_article_via_cache(article, very_short_summary):
     return llm.process_with_cache( summarise_article, article, very_short_summary )
+
+def do_summarisation_check(article):
+    content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["summary"]
+    prompt = pas.prompt_check_summary_intro + content + pas.prompt_check_summary_end
+    print(f"PROMPT: {prompt}")
+    response = llm.send_prompt(prompt, "processor", article["title"])
+    if response.startswith( ("pass", "consistency_issue", "form_issue", "new_material_issue", ) ):
+        return response
+    else:
+        raise ValueError(f"Summary check response malformed: {response}")
+
+def do_summary_check_via_cache(article):
+    return llm.process_with_cache(do_summarisation_check, article)
 
 def resummarise_article(article):
     if article["summary_word_count"] < 350:
@@ -777,7 +792,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -785,13 +800,14 @@ def output_coding_headers(file_name, do_screening, do_coding):
 def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     values = [article["id"], article["title"], article["url"], "original", str(article["text_word_count"])]
     if do_screening:
-        if do_screening:
-            values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
-                article["owe_focussed_llm"],
-                article["owe_specific_llm"],
-                article["owe_specific_human"],
-                article["passes_screening"],
-                article["passes_screening_specific"]]
+        values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
+            article["owe_focussed_llm"],
+            article["owe_specific_llm"],
+            article["owe_specific_human"],
+            article["passes_screening"],
+            article["passes_screening_specific"],
+            article.get("summary_check","None")
+        ]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
         if do_coding and article["passes_screening"] == "Yes":
@@ -1038,6 +1054,7 @@ def process_articles(
         do_screening=False,
         do_coding=False,
         do_summarising=False,
+        check_summary=False,
         very_short_summary=False,
         process_only_selected=False,
         stop_after=50,
@@ -1147,10 +1164,10 @@ def process_articles(
                     article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
                 if do_summarising and article["passes_screening_specific"] == "Yes":
-                    do_summarization_for_article(article, do_coding, very_short_summary)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary)
             elif do_summarising:
                 if not do_screening or article["passes_screening"] == "Yes":
-                    do_summarization_for_article(article, do_coding, very_short_summary)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary)
             if output_article_full or output_article_summarised:
                 output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:

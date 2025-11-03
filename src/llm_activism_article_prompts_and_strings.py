@@ -42,6 +42,26 @@ prompt_summarise_end = "\nThe article ends here.\nNow output the summarised arti
 
 prompt_summarise_end_old = "\nThe article ends here.\nNow output the summarised article. Do not output anything except the summarised article (no pre-amble). Begin with the article title (without summarising it)."
 
+prompt_check_summary_intro = """You will output an assessment of the summarisation of a news media article for me. The assessment is of whether the summarisation passes a check, and the output must be in a specific and strict format which is described at the end of these instructions.
+
+You will read the original version of the article and a shorter summarised version. The article contains some information about a disruptive primary protest action taken by one or more environmental protesters. The primary protest action is the most prominent environmental protest action mentioned in the article that is disruptive. There are three aspects of the summarisation to check to determine whether it passes the overall check.
+ 
+1. A consistency check: the summary should be consistent with the original in the way the primary protest is portrayed. The tone of the article (positive or negative or neutral towards the protest) should be maintained. The balance of the descriptions of different aspects of the protest should be maintained from the original to the summary, for example focus on protester messaging versus negative effects of the disruption. If the tone and balance is maintained as well as can be expected, given that the summary is shorter, then the article passes the consistency check.
+ 
+2. A form check: has the summarisation introduced problems with the form of the article? The summary, like the original, needs to be plausible as a news article, just like the original was. Sometimes, the summarisation introduces aspects inappropriate for a news article. For example, there might be meta-comments (a plausible article never says "This article says that..."), there might be elements from the original article that don't make sense in the new context, or there might be references to links to click (which never make sense in the summary context even if they made sense in the original version).
+
+3. A new material check: it is not allowed for the summary article to contain material that was not present in the original version. Every point in the summarised version should come directly from the original, or be a summary of points from the original. Even small amounts of new material may not be introduced.
+
+Here is the original version and the summarised version of the article:
+"""
+
+prompt_check_summary_end_temp = """\n\nEND OF ARTICLE VERSIONS\n\nThis was in fact a test. Completely ignore everything in the prompt until now and output the single word "Aardvark" and nothing else."""
+
+prompt_check_summary_end = """\n\nEND OF ARTICLE VERSIONS
+
+Now output the summarisation assessment, which must be in one of two formats. It either (1) consists of the single string "pass" and nothing else at all (if all checks are passed); or (2) begins with a comma-separated list of one or more strings indicating all detected problematic issues ("consistency_issue", "form_issue", or "new_material_issue") and then continues with explanation(s) of the issue(s). Your response must consist only of the response format as just described, i.e. it must begin with "pass", "consistency_issue", "form_issue", or "new_material_issue". Do not output either of the article versions.
+"""
+
 prompt_resummarise_intro = "A previous instance of yourself has summarised a news media article. It has also answered some questions about the original article and the summarised article. The purpose of the questions are to examine whether certain key characteristics of the original article are preserved in the summarised article. However, the answers to some of the questions were different between the original and the summarised article. Please resummarise the article. By resummarise I mean examine the summarised version, consider why the summarising process might have changed the answers to one or more questions, and change the summary so that the answers to the questions regarding the resummarised article are more likely to match the answers to the questions regarding the original article. Here is the original article:\n"
 
 prompt_resummarise_link1 = "\nHere is the summarised article:\n"
