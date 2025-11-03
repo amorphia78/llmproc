@@ -1,5 +1,5 @@
 @echo off
-powershell -ExecutionPolicy Bypass -File "C:\Users\benke\devEnv\llmproc\record-deps.ps1"
+powershell -ExecutionPolicy Bypass -File "C:\Users\benke\devEnv\llmproc\src\record-deps.ps1"
 @REM Check if argument is provided
 if "%~1"=="" (
     echo Please provide a commit message
