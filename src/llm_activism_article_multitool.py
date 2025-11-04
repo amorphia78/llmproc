@@ -193,13 +193,13 @@ def do_summarisation_for_article(article, do_coding, very_short_summary, check_s
             article["summary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["summary_coded"])
             if False or "MISMATCH" in tsv_extract_column(article["summary_comparison"],4): # Never re-summarising anyway (for now) for convenience
                 print("Re-summarising")
-                article["resummarised"] = "Yes"
-                article["resummary"] = resummarise_article(article)
-                article["resummary_word_count"] = count_words(article["resummary"])
-                article["resummary_coded"] = code_article(article, "resummary")
-                article["resummary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["resummary_coded"])
+                article["legacy_resummarised"] = "Yes"
+                article["legacy_resummary"] = legacy_resummarise_article(article)
+                article["legacy_resummary_word_count"] = count_words(article["legacy_resummary"])
+                article["legacy_resummary_coded"] = code_article(article, "legacy_resummary")
+                article["legacy_resummary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["legacy_resummary_coded"])
             else:
-                article["resummarised"] = "No"
+                article["legacy_resummarised"] = "No"
     else:
         article["summarised"] = False
 
@@ -231,14 +231,14 @@ def do_summarisation_check(article):
 def do_summary_check_via_cache(article):
     return llm.process_with_cache(do_summarisation_check, article)
 
-def resummarise_article(article):
+def legacy_resummarise_article(article):
     if article["summary_word_count"] < 350:
         word_count_prompt = "The maximum word count for the resummarised article is 350 words.\n"
     else:
         word_count_prompt = "The resummarised article may not increase in length. If you add new material from the original article, you must also remove material.\n"
     comparison_with_full_questions = replace_question_names_with_full_questions( article["summary_comparison"] )
-    prompt = ( pas.prompt_resummarise_intro + article["text"] + pas.prompt_resummarise_link1 + article["summary"] + pas.prompt_resummarise_link2 +
-               comparison_with_full_questions + pas.prompt_resummarise_end + word_count_prompt )
+    prompt = ( pas.prompt_legacy_resummarise_intro + article["text"] + pas.prompt_legacy_resummarise_link1 + article["summary"] + pas.prompt_legacy_resummarise_link2 +
+               comparison_with_full_questions + pas.prompt_legacy_resummarise_end + word_count_prompt )
     return llm.send_prompt( prompt, "summariser" )
 
 def owe_focussed(article):
@@ -346,12 +346,12 @@ def produce_output_summary_process_html(article):
         html_output += "<h2>Summary:</h2>"
         html_output += format_html_body_text(article["summary"])
         html_output += f"<p>Summary word count: {article['summary_word_count']}</p>"
-        if article["resummarised"] == "Yes":
+        if article["legacy_resummarised"] == "Yes":
             html_output += "<h2>Resummary:</h2>"
-            html_output += format_html_body_text(article["resummary"])
-            html_output += f"<p>Resummary word count: {article['resummary_word_count']}</p>"
+            html_output += format_html_body_text(article["legacy_resummary"])
+            html_output += f"<p>Resummary word count: {article['legacy_resummary_word_count']}</p>"
             html_output += "<h2>Original, summary and resummary coding comparison:</h2>"
-            html_output += make_html_table(compare_summary_and_resummary_matches(article), "<tr><th>Question</th><th>Original</th><th>Summary</th><th>Match</th><th>Resummary</th><th>Match</th></tr>")
+            html_output += make_html_table(compare_summary_and_legacy_resummary_matches(article), "<tr><th>Question</th><th>Original</th><th>Summary</th><th>Match</th><th>Resummary</th><th>Match</th></tr>")
         else:
             html_output += "<h2>Original and summary coding comparison:</h2>"
             html_output += make_html_table(article["summary_comparison"], "<tr><th>Question</th><th>Original</th><th>Summary</th><th>Match</th></tr>")
@@ -361,14 +361,14 @@ def produce_output_summary_process_html(article):
     html_output += "</body></html>"
     return html_output
 
-def compare_summary_and_resummary_matches( article ):
+def compare_summary_and_legacy_resummary_matches( article ):
     questions = tsv_extract_column(article["summary_comparison"], 1)
     original_answers = tsv_extract_column(article["summary_comparison"], 2)
     summary_answers = tsv_extract_column(article["summary_comparison"], 3)
     summary_match = tsv_extract_column(article["summary_comparison"], 4)
-    resummary_answers = tsv_extract_column(article["resummary_comparison"], 3)
-    resummary_match = tsv_extract_column(article["resummary_comparison"], 4)
-    return tsv_column_bind(questions, tsv_column_bind(original_answers, tsv_column_bind(summary_answers, tsv_column_bind(summary_match, tsv_column_bind(resummary_answers,resummary_match)))))
+    legacy_resummary_answers = tsv_extract_column(article["legacy_resummary_comparison"], 3)
+    legacy_resummary_match = tsv_extract_column(article["legacy_resummary_comparison"], 4)
+    return tsv_column_bind(questions, tsv_column_bind(original_answers, tsv_column_bind(summary_answers, tsv_column_bind(summary_match, tsv_column_bind(legacy_resummary_answers,legacy_resummary_match)))))
 
 #countNoIDs = 0
 
@@ -819,9 +819,9 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_summary"][code_name]) for code_name in pas.rating_code_names) + "\n")
                 coding_output_file.write("\t".join([article["id"], article["title"], article["url"],
-                                                    "resummarised", str(article["resummary_word_count"])]) + "\t" * 12)
+                                                    "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 12)
                 coding_output_file.write("\t" + "\t".join(
-                    str(article["codes_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
+                    str(article["codes_legacy_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
         else:
             coding_output_file.write("\n")
         coding_output_file.flush()  # So if something makes it fall over, at least we saved what we got
