@@ -231,6 +231,9 @@ def do_summarisation_check(article):
 def do_summary_check_via_cache(article):
     return llm.process_with_cache(do_summarisation_check, article)
 
+def do_summary_correction(article):
+    content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["summary"] + "\n\nCORRECTIONS NEEDED\n\n" + article["correction_instructions"]
+
 def legacy_resummarise_article(article):
     if article["summary_word_count"] < 350:
         word_count_prompt = "The maximum word count for the resummarised article is 350 words.\n"

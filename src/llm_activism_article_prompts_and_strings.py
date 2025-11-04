@@ -55,11 +55,21 @@ You will read the original version of the article and a shorter summarised versi
 Here is the original version and the summarised version of the article:
 """
 
-prompt_check_summary_end_temp = """\n\nEND OF ARTICLE VERSIONS\n\nThis was in fact a test. Completely ignore everything in the prompt until now and output the single word "Aardvark" and nothing else."""
-
 prompt_check_summary_end = """\n\nEND OF ARTICLE VERSIONS
 
 Now output the summarisation assessment, which must be in one of two formats. It either (1) consists of the single string "pass" and nothing else at all (if all checks are passed); or (2) begins with a comma-separated list of one or more strings indicating all detected problematic issues ("consistency_issue", "form_issue", or "new_material_issue") and then continues with explanation(s) of the issue(s). Your response must consist only of the response format as just described, i.e. it must begin with "pass", "consistency_issue", "form_issue", or "new_material_issue". Do not output either of the article versions.
+"""
+
+prompt_correct_summary_intro = """You will output a correction of the summarisation of a news media article for me. You will read the original version of the article, a summarised version of the article, and an explanation of changes needed to the summary to make it more in line with the original. The article contains some information about a disruptive primary protest action taken by one or more environmental protesters. The primary protest action is the most prominent environmental protest action mentioned in the article that is disruptive. 
+
+If the original article contains information about the number of people involved in the primary protest, the target of the disruption (e.g. a company or government building), the jobs or backgrounds of the protesters, and the demands of the protesters, then this information should be in the summary, and it is important correction of the summary does not remove it. Similarly, the summary should preserve the tone of the article (positive or negative or neutral towards the protests), and correcting the summary should not degrade the preservation of the tone.
+
+It is important we do not increase the total length of the corrected summary by more than a sentence or two. Aspects of the summary not needing correction should change as little as possible. 
+"""
+
+prompt_correct_summary_end = """END OF ARTICLE VERSIONS AND CORRECTION INSTRUCTIONS
+
+Now please output the corrected summary of the article. Do not include the title or the subtitle, which are never to be changed. Remember, it is important we do not increase the total length of the corrected summary by more than a sentence or two, and that aspects of the summary not needing correction should change as little as possible."
 """
 
 prompt_legacy_resummarise_intro = "A previous instance of yourself has summarised a news media article. It has also answered some questions about the original article and the summarised article. The purpose of the questions are to examine whether certain key characteristics of the original article are preserved in the summarised article. However, the answers to some of the questions were different between the original and the summarised article. Please resummarise the article. By resummarise I mean examine the summarised version, consider why the summarising process might have changed the answers to one or more questions, and change the summary so that the answers to the questions regarding the resummarised article are more likely to match the answers to the questions regarding the original article. Here is the original article:\n"
