@@ -64,12 +64,12 @@ prompt_correct_summary_intro = """You will output a correction of the summarisat
 
 If the original article contains information about the number of people involved in the primary protest, the target of the disruption (e.g. a company or government building), the jobs or backgrounds of the protesters, and the demands of the protesters, then this information should be in the summary, and it is important that correction of the summary does not remove it. Similarly, the summary should preserve the tone of the article (positive or negative or neutral towards the protest), and correcting the summary should not degrade the preservation of the tone.
 
-It is important we do not increase the total length of the corrected summary by more than a sentence or two. Aspects of the summary not needing correction should change as little as possible. 
+The target word count for the corrected summary is 300 words. Aspects of the summary not needing correction should change as little as possible. 
 """
 
 prompt_correct_summary_end = """END OF ARTICLE VERSIONS AND CORRECTION INSTRUCTIONS
 
-Now please output the corrected summary of the article. Do not include the title or the subtitle, which are never to be changed. Remember, it is important we do not increase the total length of the corrected summary by more than a sentence or two, and that aspects of the summary not needing correction should change as little as possible."
+Now please output the corrected summary of the article. Do not include the title or the subtitle, which are never to be changed. Remember that the target word count for the corrected summary is 300 words, and that aspects of the summary not needing correction should change as little as possible, unless some material needs removing to meet the target word count.
 """
 
 prompt_legacy_resummarise_intro = "A previous instance of yourself has summarised a news media article. It has also answered some questions about the original article and the summarised article. The purpose of the questions are to examine whether certain key characteristics of the original article are preserved in the summarised article. However, the answers to some of the questions were different between the original and the summarised article. Please resummarise the article. By resummarise I mean examine the summarised version, consider why the summarising process might have changed the answers to one or more questions, and change the summary so that the answers to the questions regarding the resummarised article are more likely to match the answers to the questions regarding the original article. Here is the original article:\n"

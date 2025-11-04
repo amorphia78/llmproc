@@ -700,8 +700,7 @@ def end_side_by_side_html(filename):
 
 
 def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_in_html):
-    """Append a row with full and summarised versions side by side"""
-    full_html = formatted_article_output(article, output_summary=False,
+    full_html = "<h3>Original</h3>" + formatted_article_output(article, output_summary=False,
                                          output_picture_tags=output_picture_tags,
                                          suppress_id_in_html=suppress_id_in_html,
                                          pad_margins=False,
@@ -718,7 +717,7 @@ def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_
                                                 suppress_id_in_html=suppress_id_in_html,
                                                 pad_margins=False,
                                                 complete_html=False)
-        right_html = "<h3>Summary</h3>" + summary_html + "<hr><h3>Corrected Summary</h3>" + corrected_summary_html
+        right_html = "<h3>Corrected Summary</h3>" + corrected_summary_html + "<hr><h3>Uncorrected summary</h3>" + summary_html
     elif article["summarised"]:
         summary_html = formatted_article_output(article, output_summary=True,
                                                 output_picture_tags=output_picture_tags,
