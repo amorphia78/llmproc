@@ -438,6 +438,35 @@ def prepare_articles(articles):
             article["subtitle"] = ""
             article["text_word_count"] = count_words(article["text"])
             article["subtitle_word_count"] = count_words(article["subtitle"])
+    correct_specific_scraping_issues(articles)
+
+def correct_specific_scraping_issues(articles):
+    for url, article in articles.items():
+        article_id = article.get("id")
+        # BBC_2024-04-06: Missing pictures
+        if article_id == "BBC_2024-04-06_Greta-Thunberg-Activist-arrested":
+            article["image"] = [
+                {
+                    "url": "https://ichef.bbci.co.uk/news/1024/cpsprodpb/B567/production/_133093464_d98674f8e6e02b28ab34ef2a4267268ddaa551660_0_2694_15151000x563.jpg.webp",
+                    "caption": ""
+                },
+                {
+                    "url": "https://ichef.bbci.co.uk/news/1024/cpsprodpb/146B7/production/_133093638_bfaaf60d0dc788a63882eeb58e9ad6d4a948d58e0_510_4893_27521000x563.jpg.webp",
+                    "caption": "Extinction Rebellion organisers say this is the 37th time they have protested on the A12 highway"
+                },
+                {
+                    "url": "https://ichef.bbci.co.uk/news/1024/cpsprodpb/441F/production/_133093471_944de1a5e28f5379007482f285eca54c94734ad10_0_5272_29661000x563.jpg.webp",
+                    "caption": "Greta Thunberg was loaded into a bus and driven away from the protest, along with fellow detainees"
+                }
+            ]
+        # BBC_2024-12-17: Remove grey placeholder as middle picture
+        if article_id == "BBC_2024-12-17_Climate-groups-to-back":
+            if article.get("image") and len(article["image"]) > 1:
+                del article["image"][1]
+        # Daily-Mail_2024-03-15: Invalid subtitle
+        if article_id == "Daily-Mail_2024-03-15_Moment-Sopranos-star":
+            if article.get("subtitle") == ".":
+                article["subtitle"] = None
 
 def screen_and_code_article(article, do_screening=True, do_coding=False, use_owe_focussed=True, use_owe_specific=False,get_owe_focussed_llm_coding=False):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
