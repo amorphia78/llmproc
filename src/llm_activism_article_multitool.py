@@ -181,7 +181,7 @@ def sanitise_ids(articles):
         warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
-def do_summarisation_for_article(article, do_coding, very_short_summary, check_summary):
+def do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, correction_instructions_dict):
     if article["text_word_count"] > 350 or very_short_summary:
         article["summary"] = summarise_article_via_cache(article, very_short_summary)
         article["summarised"] = True
@@ -191,7 +191,7 @@ def do_summarisation_for_article(article, do_coding, very_short_summary, check_s
         if do_coding:
             article["summary_coded"] = code_article(article, "summary")
             article["summary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["summary_coded"])
-            if False or "MISMATCH" in tsv_extract_column(article["summary_comparison"],4): # Never re-summarising anyway (for now) for convenience
+            if False or "MISMATCH" in tsv_extract_column(article["summary_comparison"],4): # Never re-summarising anyway using the legacy system (for now) for convenience
                 print("Re-summarising")
                 article["legacy_resummarised"] = "Yes"
                 article["legacy_resummary"] = legacy_resummarise_article(article)
@@ -200,8 +200,26 @@ def do_summarisation_for_article(article, do_coding, very_short_summary, check_s
                 article["legacy_resummary_comparison"] = tsv_merge_two_and_two_columns_and_check(article["codes_string"], article["legacy_resummary_coded"])
             else:
                 article["legacy_resummarised"] = "No"
+        if do_summary_corrections:
+            article_id = article["id"]
+            if article_id in correction_instructions_dict:
+                article["correction_instructions"] = correction_instructions_dict[article_id]
+                article["corrected_summary"] = do_summary_correction_via_cache(article)
+                article["corrected_summary_word_count"] = count_words(article["corrected_summary"])
+                article["has_corrected_summary"] = True
+            else:
+                article["has_corrected_summary"] = False
+                article["correction_instructions"] = ""
+        else:
+            article["has_corrected_summary"] = False
+            article["correction_instructions"] = ""
     else:
         article["summarised"] = False
+        article["has_corrected_summary"] = False
+        article["correction_instructions"] = ""
+        if do_summary_corrections and article["id"] in correction_instructions_dict:
+            print(f"ERROR: Article {article['id']} has correction instructions but does not meet criteria for summarisation")
+            sys.exit(1)
 
 def summarise_article(article, very_short_summary):
     content = "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"]
@@ -231,8 +249,15 @@ def do_summarisation_check(article):
 def do_summary_check_via_cache(article):
     return llm.process_with_cache(do_summarisation_check, article)
 
+def do_summary_correction_via_cache(article):
+    return llm.process_with_cache(do_summary_correction, article)
+
 def do_summary_correction(article):
-    content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["summary"] + "\n\nCORRECTIONS NEEDED\n\n" + article["correction_instructions"]
+    content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["summary"] + "\n\nCORRECTIONS NEEDED\n\n" + article["correction_instructions"] + "\n"
+    prompt = pas.prompt_correct_summary_intro + content + pas.prompt_correct_summary_end
+    print(f"CORRECTIONS PROMPT: {prompt}")
+    response = llm.send_prompt(prompt, "summariser")
+    return response
 
 def legacy_resummarise_article(article):
     if article["summary_word_count"] < 350:
@@ -569,10 +594,12 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     return image_html
 
 def formatted_article_output(article, output_summary=False, output_picture_tags=False,
-                             suppress_id_in_html=False, pad_margins=True, complete_html=True):
+                             suppress_id_in_html=False, pad_margins=True, complete_html=True, output_corrected_summary=False):
     identity_code, source, title, subtitle, images = article["id"], article["source"], article["title"], article[
         "subtitle"], article["image"]
-    if not output_summary:
+    if output_corrected_summary:
+        body = article["corrected_summary"]
+    elif not output_summary:
         body = article["text"]
     else:
         body = article["summary"]
@@ -636,7 +663,6 @@ def formatted_article_output(article, output_summary=False, output_picture_tags=
     return html_output
 
 def start_side_by_side_html(filename):
-    """Start a side-by-side comparison HTML file"""
     html_header = """<html>
 <head>
 <style>
@@ -665,7 +691,6 @@ td {
 
 
 def end_side_by_side_html(filename):
-    """Close the side-by-side comparison HTML file"""
     html_footer = """</table>
 </body>
 </html>
@@ -682,22 +707,36 @@ def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_
                                          pad_margins=False,
                                          complete_html=False)
 
-    if article["summarised"]:
+    if article.get("has_corrected_summary"):
         summary_html = formatted_article_output(article, output_summary=True,
                                                 output_picture_tags=output_picture_tags,
                                                 suppress_id_in_html=suppress_id_in_html,
                                                 pad_margins=False,
                                                 complete_html=False)
+        corrected_summary_html = formatted_article_output(article, output_corrected_summary=True,
+                                                output_picture_tags=output_picture_tags,
+                                                suppress_id_in_html=suppress_id_in_html,
+                                                pad_margins=False,
+                                                complete_html=False)
+        right_html = "<h3>Summary</h3>" + summary_html + "<hr><h3>Corrected Summary</h3>" + corrected_summary_html
+    elif article["summarised"]:
+        summary_html = formatted_article_output(article, output_summary=True,
+                                                output_picture_tags=output_picture_tags,
+                                                suppress_id_in_html=suppress_id_in_html,
+                                                pad_margins=False,
+                                                complete_html=False)
+        right_html = "<h3>Summary</h3>" + summary_html
     else:
         summary_html = formatted_article_output(article, output_summary=False,
                                                 output_picture_tags=output_picture_tags,
                                                 suppress_id_in_html=suppress_id_in_html,
                                                 pad_margins=False,
                                                 complete_html=False)
+        right_html = "<h3>Original</h3>" + summary_html
 
     row_html = f"""<tr>
 <td>{full_html}</td>
-<td>{summary_html}</td>
+<td>{right_html}</td>
 </tr>
 """
     with open(filename, 'a', encoding='utf-8') as f:
@@ -795,7 +834,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -809,7 +848,8 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             article["owe_specific_human"],
             article["passes_screening"],
             article["passes_screening_specific"],
-            article.get("summary_check","no_check")
+            article.get("summary_check","no_check"),
+            article.get("correction_instructions","")
         ]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
@@ -847,6 +887,7 @@ def output_article(filename, article, output_article_full, output_article_summar
             base_dir = os.path.join(individual_output_base_path, subdir)
             os.makedirs(os.path.join(base_dir, "original"), exist_ok=True)
             os.makedirs(os.path.join(base_dir, "summarised"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "corrected"), exist_ok=True)
             os.makedirs(os.path.join(base_dir, "production"), exist_ok=True)
     if output_article_full:
         formatted_output = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
@@ -870,7 +911,13 @@ def output_article(filename, article, output_article_full, output_article_summar
             with open(filename, 'a', encoding='utf-8') as f:
                 f.write(html_content)
     if output_individually and subdir is not None:
-        if article["summarised"]:
+        if article.get("has_corrected_summary"):
+            corrected_content = formatted_article_output(article, output_corrected_summary=True, output_picture_tags=output_picture_tags, suppress_id_in_html=False, pad_margins=True, complete_html=True)
+            individual_filename = os.path.join(base_dir, "corrected", f"{sanitise_name(article['id'])}.html")
+            with open(individual_filename, 'w', encoding='utf-8') as f:
+                f.write(corrected_content)
+            production_content = formatted_article_output(article, output_corrected_summary=True, output_picture_tags=output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
+        elif article["summarised"]:
             production_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
         else:
             production_content = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
@@ -1049,6 +1096,26 @@ def handle_owe_specific_coding( article, human_coding, check_human_coding, datab
         display_article_for_human_coding(article)
         check_human_code_display(article, database_file)
 
+def load_correction_instructions(corrections_file, articles):
+    corrections = {}
+    if os.path.exists(corrections_file):
+        with open(corrections_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) == 2:
+                    article_id, instructions = parts
+                    corrections[article_id] = instructions
+        for correction_article_id in corrections.keys():
+            found = False
+            for article in articles.values():
+                if article["id"] == correction_article_id:
+                    found = True
+                    break
+            if not found:
+                print(f"ERROR: Article {correction_article_id} in corrections file not found in dataset")
+                sys.exit(1)
+    return corrections
+
 def process_articles(
         key,
         debug_screening_process=False,
@@ -1059,6 +1126,8 @@ def process_articles(
         do_summarising=False,
         check_summary=False,
         very_short_summary=False,
+        do_summary_corrections=False,
+        summary_corrections_file="summary_corrections.tsv",
         process_only_selected=False,
         stop_after=50,
         count_type="any",
@@ -1122,6 +1191,9 @@ def process_articles(
         articles = {url: article for url, article in articles.items()
                     if article["id"] not in exclusion_list}
     articles = filter_articles_by_date(articles, date_range_type)
+    correction_instructions_dict = {}
+    if do_summary_corrections:
+        correction_instructions_dict = load_correction_instructions(summary_corrections_file, articles)
     ids_included_in_batch = []
     if do_screening or do_coding:
         output_coding_headers(coding_output_filename, do_screening, do_coding)
@@ -1167,10 +1239,10 @@ def process_articles(
                     article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
                 if do_summarising and article["passes_screening_specific"] == "Yes":
-                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, correction_instructions_dict)
             elif do_summarising:
                 if not do_screening or article["passes_screening"] == "Yes":
-                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, correction_instructions_dict)
             if output_article_full or output_article_summarised:
                 output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path)
             if quota_tracker is not None and do_screening and use_owe_specific:

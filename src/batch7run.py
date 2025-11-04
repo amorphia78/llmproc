@@ -46,6 +46,8 @@ multitool.process_articles(
         do_summarising=True,
         check_summary=True,
         very_short_summary=False,
+        do_summary_corrections=True,
+        summary_corrections_file="../coding_batches/batch7/summary_corrections.tsv",
         output_article_full=True,
         output_article_summarised=True,
         individual_output_base_path="../coding_batches/batch7/batch7_individual_articles",
