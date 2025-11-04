@@ -255,7 +255,6 @@ def do_summary_correction_via_cache(article):
 def do_summary_correction(article):
     content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["summary"] + "\n\nCORRECTIONS NEEDED\n\n" + article["correction_instructions"] + "\n"
     prompt = pas.prompt_correct_summary_intro + content + pas.prompt_correct_summary_end
-    print(f"CORRECTIONS PROMPT: {prompt}")
     response = llm.send_prompt(prompt, "summariser")
     return response
 
