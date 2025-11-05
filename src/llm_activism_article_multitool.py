@@ -704,6 +704,14 @@ table {
     width: 100%;
     border-collapse: collapse;
 }
+th {
+    width: 33.33%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    font-weight: bold;
+    text-align: left;
+}
 td {
     width: 33.33%;
     vertical-align: top;
@@ -715,6 +723,11 @@ td {
 <body>
 <h1>Side-by-Side Article Comparison</h1>
 <table>
+<tr>
+<th>Original</th>
+<th>First summary</th>
+<th>Production</th>
+</tr>
 """
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(html_header)
@@ -990,6 +1003,7 @@ def prepare_production_article(article, replacements_for_article):
     for replacement in replacements_for_article:
         field = replacement['replacement_field']
         old = replacement['replaced_string']
+        old = old.encode().decode('unicode_escape')
         new = replacement['replacement_string']
         if field.startswith('caption'):
             caption_index = int(field[7:])  # Extract number from 'caption0', 'caption1', etc.
@@ -1011,6 +1025,7 @@ def prepare_production_article(article, replacements_for_article):
                 print(f"ERROR: Article {article['id']} has replacement for field '{field}' which doesn't exist")
                 sys.exit(1)
             field_text = production_article[field]
+            print( f"Replacing in: {repr(field_text)}")
             if field_text is None:
                 field_text = ''
             if old not in field_text:
