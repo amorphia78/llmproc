@@ -913,8 +913,8 @@ def output_article(filename, article, output_article_full, output_article_summar
         if subdir is not None:
             base_dir = os.path.join(individual_output_base_path, subdir)
             os.makedirs(os.path.join(base_dir, "original"), exist_ok=True)
-            os.makedirs(os.path.join(base_dir, "summarised"), exist_ok=True)
-            os.makedirs(os.path.join(base_dir, "corrected"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "llm_summarised"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "llm_corrected"), exist_ok=True)
             os.makedirs(os.path.join(base_dir, "production"), exist_ok=True)
     if output_article_full:
         formatted_output = formatted_article_output(article, False, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
@@ -929,7 +929,7 @@ def output_article(filename, article, output_article_full, output_article_summar
         if article["summarised"]:
             html_content = formatted_article_output(article, True, output_picture_tags, suppress_id_in_html, pad_margins=True, complete_html=True)
             if output_individually and subdir is not None:
-                individual_filename = os.path.join(base_dir, "summarised", f"{sanitise_name(article['id'])}.html")
+                individual_filename = os.path.join(base_dir, "llm_summarised", f"{sanitise_name(article['id'])}.html")
                 with open(individual_filename, 'w', encoding='utf-8') as f:
                     f.write(html_content)
         else:
@@ -940,7 +940,7 @@ def output_article(filename, article, output_article_full, output_article_summar
     if output_individually and subdir is not None:
         if article.get("has_corrected_summary"):
             corrected_content = formatted_article_output(article, output_corrected_summary=True, output_picture_tags=output_picture_tags, suppress_id_in_html=False, pad_margins=True, complete_html=True)
-            individual_filename = os.path.join(base_dir, "corrected", f"{sanitise_name(article['id'])}.html")
+            individual_filename = os.path.join(base_dir, "llm_corrected", f"{sanitise_name(article['id'])}.html")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(corrected_content)
             production_content = formatted_article_output(article, output_corrected_summary=True, output_picture_tags=output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True)
