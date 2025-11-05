@@ -7,6 +7,8 @@ if "%~1"=="" (
 )
 
 git add -u
+git add ":/coding_batches/batch7/batch7_individual_articles/"
+git add ":/src/llm_caches/"
 git commit -m "%~1"
 git push origin
 
