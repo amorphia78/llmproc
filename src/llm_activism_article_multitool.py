@@ -725,7 +725,7 @@ td {
 <table>
 <tr>
 <th>Original</th>
-<th>First summary</th>
+<th>First LLM summary</th>
 <th>Production</th>
 </tr>
 """
@@ -1005,6 +1005,7 @@ def prepare_production_article(article, replacements_for_article):
         old = replacement['replaced_string']
         old = old.encode().decode('unicode_escape')
         new = replacement['replacement_string']
+        new = new.replace('[DELETE]','')
         if field.startswith('caption'):
             caption_index = int(field[7:])  # Extract number from 'caption0', 'caption1', etc.
             if not production_article['image']:
