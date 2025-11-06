@@ -255,7 +255,22 @@ def do_summary_correction_via_cache(article):
     return llm.process_with_cache(do_summary_correction, article)
 
 def do_summary_correction(article):
-    content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + "SUBTITLE: " + article["subtitle"] + "\n" + "TEXT: " + article["summary"] + "\n\nCORRECTIONS NEEDED\n\n" + article["correction_instructions"] + "\n"
+    content = f"""ORIGINAL ARTICLE
+
+    TITLE: {article['title']}
+    SUBTITLE: {article.get('subtitle', '')}
+    TEXT: {article['text']}
+
+    SUMMARISED ARTICLE
+
+    TITLE: {article['title']}
+    SUBTITLE: {article.get('subtitle', '')}
+    TEXT: {article['summary']}
+
+    CORRECTIONS NEEDED
+
+    {article['correction_instructions']}
+    """
     prompt = pas.prompt_correct_summary_intro + content + pas.prompt_correct_summary_end
     response = llm.send_prompt(prompt, "summariser")
     return response
@@ -1026,10 +1041,10 @@ def prepare_production_article(article, replacements_for_article):
                 print(f"ERROR: Article {article['id']} has replacement for field '{field}' which doesn't exist")
                 sys.exit(1)
             field_text = production_article[field]
-            print( f"Replacing in: {repr(field_text)}")
             if field_text is None:
                 field_text = ''
             if old not in field_text:
+                print(f"Replacing in: {repr(field_text)}")
                 print(f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found")
                 sys.exit(1)
             production_article[field] = field_text.replace(old, new)
