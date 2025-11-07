@@ -26,5 +26,21 @@ Daily-Mail_2024-03-15_Moment-Sopranos-star	replacement	format (paragraphing)		te
 Sky_2024-06-24_Extinction-Rebellion-climate	replacement	format (photo credit)		caption0	Pic: AP	[DELETE]
 Sky_2024-06-24_Extinction-Rebellion-climate	replacement	format (photo credit)		caption1	 Pic: AP	[DELETE]
 Sky_2024-06-24_Extinction-Rebellion-climate	replacement	format (photo credit)		caption2	 Pic: Reuters	[DELETE]
-Telegraph_2024-09-26_Just-Stop-Oil-soup	replacement	format (subtitle repetition)		text	Art experts call for activists who attacked Van Gogh's Sunflowers to be spared jail\n\n	[DELETE]
+Telegraph_2024-09-26_Just-Stop-Oil-soup	replacement	incongruity (subtitle repetition)		text	Art experts call for activists who attacked Van Gogh's Sunflowers to be spared jail\n\n	[DELETE]
 The-Times_2024-07-19_Police-fear-Just-Stop	replacement	format (photo credit)		caption0	JORDAN PETTITT/PA	[DELETE]
+The-Guardian_None_Nearly-175-arrested	replacement	format (photo credit)		caption0	 Photograph: Thibault Camus/AP	[DELETE]
+The-Guardian_None_Nearly-175-arrested	replacement	format (typo)		text	Pouyanne	Pouyanné
+The-Guardian_None_Nearly-175-arrested	llm	balance	"The summary omits the most powerful message from the protestors, that the executive officer is 'wanted' and runs 'France’s most polluting company'; thus, the balance is changed. To make space for putting this in, the paragraph about the potential move of the company can be omitted."			
+The-Guardian_2024-04-06_Greta-Thunberg-detained	replacement	format (photo credit)		caption0	 Photograph: Peter Dejong/AP	[DELETE]
+BBC_2024-07-22_Just-Stop-Oil-activists	replacement	format (link material)		text	"\nFollow Essex news on BBC Sounds, Facebook, Instagram and X."	[DELETE]
+The-Guardian_2023-12-02_Deep-sea-miners	replacement	format (photo credit)		caption0	 Photograph: Martin Katz/Greenpeace	[DELETE]
+The-Guardian_2023-12-15_Just-Stop-Oil	llm	balance	"The summary omits the most powerful message from the protestors, which has changed the balance. There are two paragraphs in the original, starting 'A spokesperson for the campaign said: “Section 7 of the Public Order Act 2023...' and 'How many fathers will be imprisoned...'. The first of these is included in the summary, but not the second, even though it is more powerful. There is not space for both paragraphs in the corrected summary, but try to include the strongest elements. It's OK to slightly misquote."			
+The-Guardian_2023-12-15_Just-Stop-Oil	replacement	format (photo credit)		caption0	 Photograph: Lucy North/PA	[DELETE]
+Sky_2023-10-25_Three-arrests-after	replacement	format (photo credit)		caption0	Pic: Denise Laura Baker	[DELETE]
+Sky_2023-10-25_Three-arrests-after	replacement	format (photo credit)		caption1	Pic: Just Stop Oil	[DELETE]
+Sky_2023-10-25_Three-arrests-after	replacement	incongruity (subtitle repetition)		text	\n\nThe latest protest comes just weeks after the government backed the development of the UK's largest untapped oil and gas field - and follows similar action by other campaigners.	[DELETE]
+ITV_2024-07-10_Just-Stop-Oil	replacement	format (photo credit)		caption0	 Credit: PA	[DELETE]
+ITV_2024-07-10_Just-Stop-Oil	replacement	format (photo credit)		caption1	 Credit: PA	[DELETE]
+BBC_2025-09-22_Arrests-after-gas-protesters	replacement	format (link material)		text	"\nFollow BBC Nottingham on Facebook, on X, or on Instagram. Send your story ideas to eastmidsnews@bbc.co.uk or via WhatsApp on 0808 100 2210."	[DELETE]
+The-Times_2024-06-02_Attacking-art-should-be	replacement	format (photo credit)		caption0	ROBERTA FUMAGALLI/RIPOSTE ALIMENTAIRE/AFP/GETTY IMAGES	[DELETE]
+The-Times_2024-06-02_Attacking-art-should-be	llm	incongruity (photo-related)	"There is an issue with the final paragraph, which in the summary became ""Officials in France and other European countries have struggled to deal with activists who attack the glass protecting major works without damaging the art itself."" The issue is that the photo that accompanies that section of the article is of the Magna Carta protest. The summarisation removed any information about the Magna Carta so the photo becomes incongruous. A mention of the Magna Carta action is needed in this paragraph. Be careful, however, with words like ""work"", which in the context implies artistic work, but the Magna Carta is a historical artefact, not an artwork, although important culturally. No need to mention Girl with the Pearl Earring"			

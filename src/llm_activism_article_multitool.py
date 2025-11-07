@@ -476,7 +476,7 @@ def correct_specific_scraping_issues(articles):
                 }
             ]
         # BBC_2024-12-17: Remove grey placeholder as middle picture
-        if article_id == "BBC_2024-12-17_Climate-groups-to-back":
+        if article_id == "BBC_2024-12-17_Climate-groups-to-back" or article_id == "BBC_2025-09-22_Arrests-after-gas-protesters":
             if article.get("image") and len(article["image"]) > 1:
                 del article["image"][1]
         # Daily-Mail_2024-03-15: Invalid subtitle
