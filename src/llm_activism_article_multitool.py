@@ -1020,7 +1020,8 @@ def prepare_production_article(article, replacements_for_article):
         old = replacement['replaced_string']
         old = old.encode().decode('unicode_escape')
         new = replacement['replacement_string']
-        new = new.replace('[DELETE]','')
+        new = new.replace('[DELETE]', '')
+        is_fill_blank = (old == '[FILL_BLANK]')
         if field.startswith('caption'):
             caption_index = int(field[7:])  # Extract number from 'caption0', 'caption1', etc.
             if not production_article['image']:
@@ -1031,10 +1032,19 @@ def prepare_production_article(article, replacements_for_article):
                     f"ERROR: Article {article['id']} has replacement for {field} but only has {len(production_article['image'])} images")
                 sys.exit(1)
             caption_text = production_article['image'][caption_index].get('caption', '')
-            if old not in caption_text:
-                print( f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found in caption" )
-                sys.exit(1)
-            production_article['image'][caption_index]['caption'] = caption_text.replace(old, new)
+            if is_fill_blank:
+                if caption_text:  # Non-empty field
+                    print(
+                        f"ERROR: Article {article['id']} [FILL_BLANK] in {field}: field is not empty (contains '{caption_text}')")
+                    sys.exit(1)
+                # Empty field - populate with replacement text
+                production_article['image'][caption_index]['caption'] = new
+            else:
+                if old not in caption_text:
+                    print(
+                        f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found in caption")
+                    sys.exit(1)
+                production_article['image'][caption_index]['caption'] = caption_text.replace(old, new)
             replaced_fields.append(field)
         else:
             if field not in production_article:
@@ -1043,11 +1053,18 @@ def prepare_production_article(article, replacements_for_article):
             field_text = production_article[field]
             if field_text is None:
                 field_text = ''
-            if old not in field_text:
-                print(f"Replacing in: {repr(field_text)}")
-                print(f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found")
-                sys.exit(1)
-            production_article[field] = field_text.replace(old, new)
+            if is_fill_blank:
+                if field_text:  # Non-empty field
+                    print(
+                        f"ERROR: Article {article['id']} [FILL_BLANK] in {field}: field is not empty (contains '{field_text}')")
+                    sys.exit(1)
+                production_article[field] = new
+            else:
+                if old not in field_text:
+                    print(f"Replacing in: {repr(field_text)}")
+                    print(f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found")
+                    sys.exit(1)
+                production_article[field] = field_text.replace(old, new)
             replaced_fields.append(field)
     return production_article, replaced_fields, production_base_type
 
