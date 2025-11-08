@@ -479,6 +479,11 @@ def correct_specific_scraping_issues(articles):
         if article_id == "BBC_2024-12-17_Climate-groups-to-back" or article_id == "BBC_2025-09-22_Arrests-after-gas-protesters":
             if article.get("image") and len(article["image"]) > 1:
                 del article["image"][1]
+        # BBC_2025-07-25: Correct third image URL
+        if article_id == "BBC_2025-07-25_Forth-Road-Bridge-closed":
+            print("******************************* HERE")
+            print(article["image"])
+            article["image"][2]["url_large"] = "https://ichef.bbci.co.uk/news/1024/cpsprodpb/af50/live/0e2bb6b0-6963-11f0-b2d3-f75ba2a92ec7.jpg.webp"
         # Daily-Mail_2024-03-15: Invalid subtitle
         if article_id == "Daily-Mail_2024-03-15_Moment-Sopranos-star":
             if article.get("subtitle") == ".":

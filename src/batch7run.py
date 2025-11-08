@@ -63,6 +63,34 @@ multitool.process_articles(
         check_human_coding="no",
     )
 
-#import llmproc_core as llm
-#image_url = "https://ichef.bbci.co.uk/news/1536/cpsprodpb/3a81/live/863d06a0-d4cb-11ee-9614-4f148ae4c766.jpg.webp"
-#llm.describe_image_from_url(image_url)
+def dont_run():
+    import llmproc_core as llm
+    image_url = "https://ichef.bbci.co.uk/news/1536/cpsprodpb/3a81/live/863d06a0-d4cb-11ee-9614-4f148ae4c766.jpg.webp"
+    llm.describe_image_from_url(image_url, "Please describe this image in detail.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 100 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 50 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in roughly 20 words.")
+
+    image_url = "https://ichef.bbci.co.uk/news/1536/cpsprodpb/fa58/live/ab688f30-d4cb-11ee-9614-4f148ae4c766.jpg.webp"
+    llm.describe_image_from_url(image_url, "Please describe this image in detail.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 100 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 50 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in roughly 20 words.")
+
+    image_url = "https://www.thetimes.com/imageserver/image/%2Fmethode%2Ftimes%2Fprod%2Fweb%2Fbin%2Fa0ff0276-f0a1-413b-950d-477bcbf051fc.jpg?crop=1049%2C590%2C227%2C130&resize=1500"
+    llm.describe_image_from_url(image_url, "Please describe this image in detail.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 100 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 50 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in roughly 20 words.")
+
+    image_url = "https://www.thetimes.com/imageserver/image/%2Fmethode%2Ftimes%2Fprod%2Fweb%2Fbin%2Faa0dd352-5da6-4657-ad4a-e1d667c9cab6.jpg?crop=5000%2C3333%2C0%2C0"
+    llm.describe_image_from_url(image_url, "Please describe this image in detail.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 100 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 50 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in roughly 20 words.")
+
+    image_url = "https://www.thetimes.com/imageserver/image/%2Fmethode%2Ftimes%2Fprod%2Fweb%2Fbin%2Fcc4fbeac-d161-4f62-a7b7-98888e9e0dca.jpg?crop=999%2C562%2C12%2C0"
+    llm.describe_image_from_url(image_url, "Please describe this image in detail.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 100 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in at most 50 words.")
+    llm.describe_image_from_url(image_url, "Please describe this image in detail in roughly 20 words.")

@@ -125,14 +125,7 @@ def process_url_with_cache(process_func, url):
         return result
 
 
-def describe_image_from_url(image_url):
-    """
-    Ask Claude to describe an image from a URL.
-
-    Args:
-        client: The Anthropic client instance
-        image_url: URL of the image to describe
-    """
+def describe_image_from_url(image_url, prompt = "Please describe this image in detail."):
     import requests
     import base64
 
@@ -170,7 +163,7 @@ def describe_image_from_url(image_url):
                 },
                 {
                     "type": "text",
-                    "text": "Please describe this image in detail."
+                    "text": prompt
                 }
             ]
         }
@@ -184,4 +177,5 @@ def describe_image_from_url(image_url):
         messages=messages,
     ).content[0].text
 
-    print(response)
+    print(f"Prompt: {prompt}\n")
+    print(f"Response: {response}\n")
