@@ -1042,7 +1042,7 @@ def prepare_production_article(article, replacements_for_article):
             else:
                 if old not in caption_text:
                     print(
-                        f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found in caption")
+                        f"ERROR: Article {article['id']} replacement in {field}: replaced_string '{old}' not found in caption {repr(caption_text)}")
                     sys.exit(1)
                 production_article['image'][caption_index]['caption'] = caption_text.replace(old, new)
             replaced_fields.append(field)
