@@ -63,3 +63,6 @@ multitool.process_articles(
         check_human_coding="no",
     )
 
+#import llmproc_core as llm
+#image_url = "https://ichef.bbci.co.uk/news/1536/cpsprodpb/3a81/live/863d06a0-d4cb-11ee-9614-4f148ae4c766.jpg.webp"
+#llm.describe_image_from_url(image_url)

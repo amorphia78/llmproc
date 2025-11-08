@@ -123,3 +123,65 @@ def process_url_with_cache(process_func, url):
         with open(cache_file, 'w', encoding='utf-8') as f:
             json.dump(data_to_store, ensure_ascii=False, indent=2, fp=f)  # type: ignore
         return result
+
+
+def describe_image_from_url(image_url):
+    """
+    Ask Claude to describe an image from a URL.
+
+    Args:
+        client: The Anthropic client instance
+        image_url: URL of the image to describe
+    """
+    import requests
+    import base64
+
+    # Fetch the image from the URL
+    response = requests.get(image_url)
+    response.raise_for_status()
+
+    # Convert to base64
+    image_data = base64.b64encode(response.content).decode('utf-8')
+
+    # Determine media type from URL extension
+    if image_url.endswith('.webp'):
+        media_type = 'image/webp'
+    elif image_url.endswith('.jpg') or image_url.endswith('.jpeg'):
+        media_type = 'image/jpeg'
+    elif image_url.endswith('.png'):
+        media_type = 'image/png'
+    elif image_url.endswith('.gif'):
+        media_type = 'image/gif'
+    else:
+        media_type = 'image/jpeg'  # default fallback
+
+    # Create the messages with image content
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": image_data,
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "Please describe this image in detail."
+                }
+            ]
+        }
+    ]
+
+    # Get response from Claude
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        temperature=0,
+        messages=messages,
+    ).content[0].text
+
+    print(response)
