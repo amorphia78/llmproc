@@ -1,0 +1,71 @@
+Reading files...
+Files read successfully.
+
+All human coding article IDs found in batch 6 file.
+
+Batch 6 included articles: 50 
+Batch 6 column names:
+ [1] "ID"                 "Title"              "URL"                "Version"            "Word.count"         "OWE"                "SPURIOUS"           "SPECIFIC"          
+ [9] "LETTER"             "ROUNDUP"            "NON.UK.EDITION"     "NON.ENGLISH"        "VIDEO"              "NON.DISRUPTIVE.OWE" "OWE_FOCUSSED"       "OWE_SPECIFIC"      
+[17] "PASSES_SCREENING"  
+
+Batch 7 included articles: 100 
+Batch 7 column names:
+ [1] "ID"                        "Title"                     "URL"                       "Version"                   "Word.count"                "OWE"                      
+ [7] "SPURIOUS"                  "SPECIFIC"                  "LETTER"                    "ROUNDUP"                   "NON.UK.EDITION"            "NON.ENGLISH"              
+[13] "VIDEO"                     "NON.DISRUPTIVE.OWE"        "OWE_FOCUSSED"              "OWE_SPECIFIC_LLM"          "OWE_SPECIFIC_HUMAN"        "PASSES_SCREENING"         
+[19] "PASSES_SCREENING_SPECIFIC" "SUMMARY_CHECK"             "CORRECTION_INSTRUCTIONS"   "REPLACED_FIELDS"          
+
+Number of included articles:
+  Batch 6: 50 
+  Batch 7: 100 
+
+====================================================================== 
+SUMMARY STATISTICS - ORIGINAL VERSION WORD COUNTS
+====================================================================== 
+
+Batch 6 (Included Articles) 
+  Mean:    637.98 
+  Median:  577 
+  SD:      348.6601 
+  Min:     151 
+  Max:     1879 
+  Q1:      427.25 
+  Q3:      755.25 
+  N:       50 
+  NA:      0 
+
+Batch 7 (PASSES_SCREENING_SPECIFIC == Yes) 
+  Mean:    555.93 
+  Median:  466.5 
+  SD:      355.0165 
+  Min:     133 
+  Max:     2355 
+  Q1:      350.75 
+  Q3:      666.5 
+  N:       100 
+  NA:      0 
+
+====================================================================== 
+PERMUTATION TEST (Two-Sample)
+====================================================================== 
+
+Wilcoxon-Mann-Whitney Permutation Test
+Null hypothesis: No difference in word count distributions
+
+
+	Approximative Wilcoxon-Mann-Whitney Test
+
+data:  word_count by batch (Batch 6, Batch 7)
+Z = 1.9834, p-value = 0.0483
+alternative hypothesis: true mu is not equal to 0
+
+
+Test statistic (Z): 1.983424 
+P-value:            0.0483 
+
+Mean difference (Batch 6 - Batch 7): 82.05 
+
+====================================================================== 
+Analysis complete.
+Results saved to: batch_comparison_results.txt 
