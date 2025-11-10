@@ -618,7 +618,7 @@ def get_github_image_url(article, image_data):
     image_path = re.sub(r'(?<!:)//+', '/', image_path)
     return image_path
 
-def generate_image_html_outlet_url(article, image_data, output_picture_tags):
+def generate_image_html_outlet_url(article, image_data, output_picture_tags, image_alt_compulsory=False):
     # Get the image URL from the outlet
     if "url_large" in image_data:
         image_path = image_data["url_large"]
@@ -627,18 +627,17 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     else:
         warnings.warn(f"Image for {article['id']} has neither url_large nor url", UserWarning)
         image_path = ""
-
     # Clean Telegraph URLs that have the /web/timestamp prefix
     if image_path and "telegraph.co.uk/web/" in image_path:
         match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_path)
         if match:
             image_path = match.group(1)
-
-    # NOTE: Intentionally NOT using GitHub URLs - we want outlet URLs
-    # The local_name and local_path fields are ignored in this function
-
     caption = image_data.get('caption', '')
-
+    alt_text = image_data.get('text_description', '[IMAGE_ERROR] No description')
+    if image_alt_compulsory:
+        if "Image description not available" in alt_text or "[IMAGE_ERROR]" in alt_text:
+            print(f"\n\nImage description not available for {article['id']}: {alt_text}\n\n")
+            sys.exit(1)
     if output_picture_tags:
         pic_tag = "#PH"
         caption_start_tag = "#CS "
@@ -647,17 +646,16 @@ def generate_image_html_outlet_url(article, image_data, output_picture_tags):
         pic_tag = ""
         caption_start_tag = ""
         caption_end_tag = ""
-
     image_html = f'''
     <figure width="100%">
-      {pic_tag}<img src="{image_path}" alt="{caption}" width="100%">
+      {pic_tag}<img src="{image_path}" alt="{alt_text}" width="100%">
       {caption_start_tag}<figcaption align="center">{caption}</figcaption>{caption_end_tag}
     </figure>
     '''
     return image_html
 
 def formatted_article_output(article, output_summary=False, output_picture_tags=False,
-                             suppress_id_in_html=False, pad_margins=True, complete_html=True, output_corrected_summary=False):
+                             suppress_id_in_html=False, pad_margins=True, complete_html=True, output_corrected_summary=False, image_alt_compulsory=False):
     identity_code, source, title, subtitle, images = article["id"], article["source"], article["title"], article[
         "subtitle"], article["image"]
     if output_corrected_summary:
@@ -668,7 +666,7 @@ def formatted_article_output(article, output_summary=False, output_picture_tags=
         body = article["summary"]
     image_strings = []
     if images:
-        image_strings = [generate_image_html_outlet_url(article, image, output_picture_tags) for image in images]
+        image_strings = [generate_image_html_outlet_url(article, image, output_picture_tags, image_alt_compulsory) for image in images[:3]]
         n_images = len(image_strings)
     else:
         n_images = 0
@@ -997,7 +995,11 @@ def output_article(filename, article, output_article_full, output_article_summar
                 f.write(corrected_content)
     if output_individually and subdir is not None:
         production_article, replaced_fields, production_base_type = prepare_production_article(article,replacements_for_article)
-        production_content = formatted_article_output(production_article, False, output_picture_tags,suppress_id_in_html=True, pad_margins=False, complete_html=True)
+        if subdir == "owe_specific":
+            image_alt_compulsory = False
+        else:
+            image_alt_compulsory = False
+        production_content = formatted_article_output(production_article, False, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True, image_alt_compulsory=image_alt_compulsory)
         individual_filename = os.path.join(base_dir, "production", f"{sanitise_name(article['id'])}.html")
         with open(individual_filename, 'w', encoding='utf-8') as f:
             f.write(production_content)
@@ -1331,6 +1333,9 @@ def generate_llm_image_descriptions(article):
     for image_index in range(num_images_to_process):
         text_description = generate_llm_image_description_via_cache(article, image_index)
         article["image"][image_index]['text_description'] = text_description
+        if "[IMAGE_ERROR]" in text_description:
+            print(f"{text_description} for article {article['id']} {image_index}\n")
+            sys.exit(1)
 
 def generate_llm_image_description(article, image_index):
     image = article["image"][image_index]
@@ -1340,7 +1345,7 @@ def generate_llm_image_description(article, image_index):
     elif "url" in image:
         image_url = image["url"]
     else:
-        return "Image description not available"
+        return "[IMAGE_ERROR] Image with no URL"
     # Clean Telegraph URLs that have the /web/timestamp prefix
     if image_url and "telegraph.co.uk/web/" in image_url:
         match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_url)
@@ -1353,15 +1358,23 @@ def generate_llm_image_description(article, image_index):
     # Try with outlet URL first
     try:
         return llm.describe_image_from_url(image_url, prompt)
-    except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException):
-        # If outlet URL fails, try GitHub URL
+    except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException,
+            llm.anthropic.BadRequestError) as e:
+        # If outlet URL fails (including 5MB limit), try GitHub URL
+        if isinstance(e, llm.anthropic.BadRequestError):
+            print(f"Image too large or bad request: {e}. Falling back to GitHub URL...")
+        else:
+            print(f"HTTP error fetching image: {e}. Falling back to GitHub URL...")
         github_url = get_github_image_url(article, image)
+        print(f"\nAttempting github URL: {github_url}\n")
         if github_url is None:
-            return "Image description not available"
+            return "[IMAGE_ERROR] Image with no github URL"
         try:
             return llm.describe_image_from_url(github_url, prompt)
-        except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException):
-            return "Image description not available"
+        except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException,
+                llm.anthropic.BadRequestError) as new_e:
+            print(new_e)
+            return "[IMAGE_ERROR] All attempts at image description failed"
 
 def generate_llm_image_description_via_cache(article, image_index):
     return llm.process_with_cache(generate_llm_image_description, article, image_index)
@@ -1496,10 +1509,10 @@ def process_articles(
                 if not do_screening or article["passes_screening"] == "Yes":
                     do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict)
             if output_article_full or output_article_summarised:
-                replacements_for_article = replacement_corrections_dict.get(article["id"], [])
-                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
                 if make_text_descriptions_for_images and article.get("passes_screening_specific") == "Yes":
                     generate_llm_image_descriptions(article)
+                replacements_for_article = replacement_corrections_dict.get(article["id"], [])
+                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")

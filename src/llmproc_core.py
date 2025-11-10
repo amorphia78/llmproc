@@ -130,19 +130,15 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
     import base64
     from PIL import Image
     from io import BytesIO
-
     # Fetch the image from the URL
     response = requests.get(image_url)
     response.raise_for_status()
-
     # Convert to base64
     image_data = base64.b64encode(response.content).decode('utf-8')
-
     # Determine media type from actual image content using PIL
     try:
         with Image.open(BytesIO(response.content)) as img:
             image_format = img.format.lower()
-
             # Map PIL format names to MIME types
             format_to_mime = {
                 'jpeg': 'image/jpeg',
@@ -156,7 +152,6 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
         # Fallback to checking Content-Type header
         content_type = response.headers.get('Content-Type', 'image/jpeg')
         media_type = content_type.split(';')[0].strip()
-
     # Create the messages with image content
     messages = [
         {
@@ -177,7 +172,6 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
             ]
         }
     ]
-
     # Get response from Claude
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -185,8 +179,6 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
         temperature=0,
         messages=messages,
     ).content[0].text
-
     print(f"\nPrompt: {prompt}\n")
     print(f"Response: {response}\n")
-
     return response
