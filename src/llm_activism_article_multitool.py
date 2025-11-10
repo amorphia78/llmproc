@@ -955,6 +955,7 @@ def output_article(filename, article, output_article_full, output_article_summar
         replacements_for_article = []
     subdir = None
     base_dir = None
+    production_content = "No production content"
     if output_individually:
         if article.get("passes_screening_specific") == "Yes":
             subdir = "owe_specific"
@@ -1015,6 +1016,7 @@ def output_article(filename, article, output_article_full, output_article_summar
         if article[compilation_inclusion_criterion] == "Yes":
             if compilation_format == "side-by-side" and compilation_filename is not None:
                 append_side_by_side_row(compilation_filename, article, output_picture_tags, suppress_id_in_html,replacements_for_article)
+    return production_content
 
 def prepare_production_article(article, replacements_for_article):
     # The 'text' field always contains the production text regardless of source.
@@ -1379,6 +1381,9 @@ def generate_llm_image_description(article, image_index):
 def generate_llm_image_description_via_cache(article, image_index):
     return llm.process_with_cache(generate_llm_image_description, article, image_index)
 
+def do_final_production_check(article):
+    pass
+
 def process_articles(
         key,
         debug_screening_process=False,
@@ -1419,7 +1424,8 @@ def process_articles(
         quota_pad=0,
         human_coding=False,
         check_human_coding="no",
-        make_text_descriptions_for_images=False
+        make_text_descriptions_for_images=False,
+        final_production_check=False
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1512,7 +1518,9 @@ def process_articles(
                 if make_text_descriptions_for_images and article.get("passes_screening_specific") == "Yes":
                     generate_llm_image_descriptions(article)
                 replacements_for_article = replacement_corrections_dict.get(article["id"], [])
-                output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
+                article['production_content'] = output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
+                if final_production_check and article.get("passes_screening_specific") == "Yes":
+                    do_final_production_check(article)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")

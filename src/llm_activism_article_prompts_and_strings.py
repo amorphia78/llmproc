@@ -144,8 +144,12 @@ prompt_coding_end = "\nNow output answers to all of the questions concerning the
 
 prompt_image_description = "Please describe this image in detail in at most 50 words. Use the following information for context, but use the context to enable description of what is explicitly seen in the picture - do not use the context to support guesses about what the picture might imply. The image is from a news media article about disruptive environmental protest.\n"
 
-prompt_final_plausibility_check_intro = """
+prompt_final_plausibility_check_intro = """Your task is to examine content to check whether it is plausible as a news media article from a mainstream UK news media outlet. The origin of the article is a real UK news media article, but the article has been processed in order to shorten it (if it was long) and perhaps also to achieve other changes. The check is to ensure that these changes have not damaged the plausibility of the article. Example of problems that might have been created by the process are: (1) Non-sequitur sentences, perhaps caused by content removal; (2) Content that would not be part of the body text of an article; (3) Inappropriately unattributed quotes or quotes attributed to an unidentified individual; (4) Images that no longer make sense in context (perhaps because body text content that made them relevant was removed); (5) Spelling, punctuation, or grammar issues. This list is not exhaustive of all types of problem.
+
+The article is in HTML format but you should ignore formatting issues. Imagine you are reading the rendered version of the article (because the HTML is very simple this is easy to do, and algorithmic processing of the HTML syntax is not to be attempted). Note also, you cannot see the images (do not attempt to follow the links) but it is necessary for you to pay attention to both the image captions and the image alt texts, because the nature of the images might be relevant for the plausibility of the article.
+
+Here is the article:
 
 """
 
-prompt_final_plausibility_check_end = "Now please output either (1) only the two words 'check passed' or (2) 'check failed' followed by an explanation of "
+prompt_final_plausibility_check_end = "\nEnd of article\n\nNow please output either (1) only the two words 'check passed' or (2) 'check failed - ' followed by an explanation of what led to the judgement that the check failed."

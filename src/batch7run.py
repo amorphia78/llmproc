@@ -61,7 +61,8 @@ multitool.process_articles(
         date_range_type="final",
         human_coding=True,
         check_human_coding="no",
-        make_text_descriptions_for_images=True
+        make_text_descriptions_for_images=True,
+        final_production_check=True,
     )
 
 def dont_run():
