@@ -10,6 +10,8 @@ library(coin)  # For permutation tests
 output_file <- "batch_comparison_results.txt"
 sink(output_file)
 
+cat("IMPORTANT NOTE!!!\nThis analysis compares batch 6 (pre-study-period) with batch 7 (study period) which is not the same as comparing pre-study-period with study period, because (1) batch 7 was balanced to quotas and batch 6 was not; (2) implementation of owe-specific shifted a bit between the two (this latter factor probably not very important). We get some indication of changes from this analysus but it isn't watertight.\n\n")
+
 # 1. Read in the files
 cat("Reading files...\n")
 
@@ -56,17 +58,11 @@ cat("All human coding article IDs found in batch 6 file.\n\n")
 batch6_included <- batch6[batch6$ID %in% included_batch6_ids, ]
 
 cat("Batch 6 included articles:", nrow(batch6_included), "\n")
-cat("Batch 6 column names:\n")
-print(names(batch6_included))
-cat("\n")
 
 # 3. Filter batch 7 to included articles (PASSES_SCREENING_SPECIFIC == "Yes")
 batch7_included <- batch7[batch7$PASSES_SCREENING_SPECIFIC == "Yes", ]
 
 cat("Batch 7 included articles:", nrow(batch7_included), "\n")
-cat("Batch 7 column names:\n")
-print(names(batch7_included))
-cat("\n")
 
 # Get word counts for original versions only
 # Note: R converts "Word count" to "Word.count" when reading the file

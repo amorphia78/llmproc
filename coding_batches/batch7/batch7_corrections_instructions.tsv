@@ -18,7 +18,7 @@ Metro_None_Three-JSO-protesters-charged	llm	balance (too pro-protester)	"The sum
 Sky_2025-01-13_Just-Stop-Oil-protesters	replacement	format (photo credit)		caption0	Pic: Just Stop Oil/PA	[DELETE]
 Sky_2025-01-13_Just-Stop-Oil-protesters	replacement	format (photo credit)		caption1	 Pic: PA	[DELETE]
 Sky_2025-01-13_Just-Stop-Oil-protesters	replacement	format (photo credit)		caption2	 Pic: AP	[DELETE]
-Mirror_2024-09-27_Just-Stop-Oil-protestors	llm	clarity	"The final sentence of the summary, 'The three activists threw soup over the famous Sunflowers paintings before addressing horrified onlookers about their environmental demands and the imprisonment of fellow activists', is unnecessary recap. Replace it with a sentence or two about the fact that this action came as others were jailed for a similar action."			
+Mirror_2024-09-27_Just-Stop-Oil-protestors	llm	incongruity (clarity)	"The final sentence of the summary, 'The three activists threw soup over the famous Sunflowers paintings before addressing horrified onlookers about their environmental demands and the imprisonment of fellow activists', is unnecessary recap. Replace it with a sentence or two about the fact that this action came as others were jailed for a similar action."			
 Mirror_2024-09-27_Just-Stop-Oil-protestors	replacement	format (photo credit)		caption0	 (Image: PA)	[DELETE]
 The-Guardian_2025-01-08_Charges-against-34-people	replacement	format (photo credit)		caption0	 Photograph: Henry Nicholls/AFP/Getty Images	[DELETE]
 Daily-Mail_2024-03-15_Moment-Sopranos-star	llm	balance (too anti-protester)	"The part of the article most sympathetic towards the protesters is actor Imperioli's quoted post on Instagram, but this is missing, changing the balance. It needs to be included. An obvious sentence that could be removed to make room is 'Some of the crowd members believed the protestors were part of the show as the plot addresses environmental concerns and involved audience participation.'"			
@@ -110,3 +110,19 @@ BBC_2023-10-10_Radcliffe-Camera-in-Oxford	replacement	format (link material)		te
 BBC_2024-06-21_Two-women-charged-after	replacement	format (link material)		text	"\nFollow Essex news on Facebook, Instagram and X. Got a story? Email eastofenglandnews@bbc.co.uk or WhatsApp us on 0800 169 1830"	[DELETE]
 Metro_None_Just-Stop-Oil-activists	replacement	format (photo credit)		caption0	 (Picture: Just Stop Oil)	[DELETE]
 Metro_None_Just-Stop-Oil-activists	replacement	format (photo credit)		caption1	 (Picture: Just Stop Oil)	[DELETE]
+BBC_2024-05-10_Just-Stop-Oil-pair	llm	balance (too pro-protester)	"The summary removes proportionally more anti-protester quotes than it removes quotes from the protesters defending their actions. The final anti-protester quote must be reinstated to restore this balance. Do not add quotes from the protesters not present in the first summary. To make space for the  additional material, remove the paragraph beginning 'Reid's attempts to disrupt the match on the other table...'."			
+BBC_2023-10-13_Just-Stop-Oil-spraypaint	llm	balance (too pro-protester)	"The summary attempts to cover some details from all of the many mentioned protest events, which means that there is appreciably less material include that comprises quotes critical of the protesters. An obvious way to make space for more balanced quoting is to include details only of a couple of actions, probably the first two - Leeds and Kings's College at Cambridge - although the list of targetted universities should be retained."			
+BBC_2025-01-29_Just-Stop-Oil-pair	replacement	format (link material)		text	"\nListen to the best of BBC Radio London on Sounds and follow BBC London on Facebook, X and Instagram. Send your story ideas to hello.bbclondon@bbc.co.uk"	[DELETE]
+BBC_2025-02-02_Protesters-block-airport-over	replacement	format (link material)		text	"\nYou can follow BBC Hampshire & Isle of Wight on Facebook, X (Twitter), or Instagram."	[DELETE]
+Metro_None_Judge-puts-Just-Stop	replacement	format (photo credit)		caption0	 (Picture: PA; Just Stop Oil)	[DELETE]
+Metro_None_Judge-puts-Just-Stop	replacement	format (photo credit)		caption1	 (Picture: PA)	[DELETE]
+Sun_2024-08-15_ROYAL-TARGET-Eco-idiots	replacement	format (photo credit)		caption0	Credit: Alamy	[DELETE]
+Sun_2024-08-15_ROYAL-TARGET-Eco-idiots	replacement	format (photo credit)		caption1	Credit: Getty	[DELETE]
+Sun_2024-08-15_ROYAL-TARGET-Eco-idiots	replacement	format (photo credit)		caption2	Credit: Paul Edwards	[DELETE]
+Sun_2024-09-27_ART-VANDALS-Moment-Just	replacement	format (photo credit)		caption0	Credit: JustStop_Oil@X	[DELETE]
+Sun_2024-09-27_ART-VANDALS-Moment-Just	replacement	format (photo credit)		caption1	Credit: JustStop_Oil@X	[DELETE]
+Sun_2024-09-27_ART-VANDALS-Moment-Just	replacement	format (photo credit)		caption2	Credit: PA	[DELETE]
+Sun_2024-08-29_SUPER-FORTRESS-Stay-away	llm	balance (too pro-protester)	"The sentence mentioning protesting against the King has had the phrase 'even though he is a green campaigner' removed, which slightly shifts the balance away from criticism of the protests. There is no need to change anything else in the summary."			
+Metro_None_Stonehenge-damaged-after-being	replacement	format (photo credit)		caption0	 (Picture: Just Stop Oil/PA Wire)	[DELETE]
+Metro_None_Stonehenge-damaged-after-being	replacement	format (photo credit)		caption1	 (Picture: Just Stop Oil/PA Wire)	[DELETE]
+Metro_None_Stonehenge-damaged-after-being	replacement	format (photo credit)		caption2	 (Picture: Just Stop Oil/PA Wire)	[DELETE]

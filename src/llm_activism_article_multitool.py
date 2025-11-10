@@ -475,15 +475,17 @@ def correct_specific_scraping_issues(articles):
                     "caption": "Greta Thunberg was loaded into a bus and driven away from the protest, along with fellow detainees"
                 }
             ]
-        # BBC_2024-12-17: Remove grey placeholder as middle picture
+        # Two articles: Remove grey placeholder as middle picture
         if article_id == "BBC_2024-12-17_Climate-groups-to-back" or article_id == "BBC_2025-09-22_Arrests-after-gas-protesters":
             if article.get("image") and len(article["image"]) > 1:
                 del article["image"][1]
         # BBC_2025-07-25: Correct third image URL
         if article_id == "BBC_2025-07-25_Forth-Road-Bridge-closed":
-            print("******************************* HERE")
-            print(article["image"])
             article["image"][2]["url_large"] = "https://ichef.bbci.co.uk/news/1024/cpsprodpb/af50/live/0e2bb6b0-6963-11f0-b2d3-f75ba2a92ec7.jpg.webp"
+        # Add missing image for BBC article
+        if article_id == "BBC_2025-02-02_Protesters-block-airport-over":
+            article["image"][1]["url_large"] = "https://ichef.bbci.co.uk/news/1024/cpsprodpb/51c2/live/1f798f30-e19d-11ef-9c5d-25d17bbea272.jpg.webp"
+            article["image"][1]["caption"] = "Protesters are calling for a total ban on private jets"
         # Daily-Mail_2024-03-15: Invalid subtitle
         if article_id == "Daily-Mail_2024-03-15_Moment-Sopranos-star":
             if article.get("subtitle") == ".":

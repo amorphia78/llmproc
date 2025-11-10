@@ -1,21 +1,13 @@
+IMPORTANT NOTE!!!
+This analysis compares batch 6 (pre-study-period) with batch 7 (study period) which is not the same as comparing pre-study-period with study period, because (1) batch 7 was balanced to quotas and batch 6 was not; (2) implementation of owe-specific shifted a bit between the two (this latter factor probably not very important). We get some indication of changes from this analysus but it isn't watertight.
+
 Reading files...
 Files read successfully.
 
 All human coding article IDs found in batch 6 file.
 
 Batch 6 included articles: 50 
-Batch 6 column names:
- [1] "ID"                 "Title"              "URL"                "Version"            "Word.count"         "OWE"                "SPURIOUS"           "SPECIFIC"          
- [9] "LETTER"             "ROUNDUP"            "NON.UK.EDITION"     "NON.ENGLISH"        "VIDEO"              "NON.DISRUPTIVE.OWE" "OWE_FOCUSSED"       "OWE_SPECIFIC"      
-[17] "PASSES_SCREENING"  
-
 Batch 7 included articles: 100 
-Batch 7 column names:
- [1] "ID"                        "Title"                     "URL"                       "Version"                   "Word.count"                "OWE"                      
- [7] "SPURIOUS"                  "SPECIFIC"                  "LETTER"                    "ROUNDUP"                   "NON.UK.EDITION"            "NON.ENGLISH"              
-[13] "VIDEO"                     "NON.DISRUPTIVE.OWE"        "OWE_FOCUSSED"              "OWE_SPECIFIC_LLM"          "OWE_SPECIFIC_HUMAN"        "PASSES_SCREENING"         
-[19] "PASSES_SCREENING_SPECIFIC" "SUMMARY_CHECK"             "CORRECTION_INSTRUCTIONS"   "REPLACED_FIELDS"          
-
 Number of included articles:
   Batch 6: 50 
   Batch 7: 100 
@@ -57,12 +49,12 @@ Null hypothesis: No difference in word count distributions
 	Approximative Wilcoxon-Mann-Whitney Test
 
 data:  word_count by batch (Batch 6, Batch 7)
-Z = 1.9834, p-value = 0.0483
+Z = 1.9834, p-value = 0.049
 alternative hypothesis: true mu is not equal to 0
 
 
 Test statistic (Z): 1.983424 
-P-value:            0.0483 
+P-value:            0.049 
 
 Mean difference (Batch 6 - Batch 7): 82.05 
 
