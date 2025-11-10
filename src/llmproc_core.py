@@ -124,7 +124,6 @@ def process_url_with_cache(process_func, url):
             json.dump(data_to_store, ensure_ascii=False, indent=2, fp=f)  # type: ignore
         return result
 
-
 def describe_image_from_url(image_url, prompt = "Please describe this image in detail."):
     import requests
     import base64

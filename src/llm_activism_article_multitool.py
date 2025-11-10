@@ -1316,6 +1316,12 @@ def load_correction_instructions(corrections_file, articles):
                 })
     return llm_corrections, replacement_corrections
 
+def generate_llm_image_descriptions( article ):
+    # This will probably call generate_llm_image_description for each image present
+
+def generate_llm_image_description( article, image_number ):
+    prompt = prompt_image_description + f"The article title is: '{title}'. The article subtitle is ''{subtitle}'. The image caption is '{caption}'."
+
 def process_articles(
         key,
         debug_screening_process=False,

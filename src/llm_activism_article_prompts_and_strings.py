@@ -141,3 +141,5 @@ prompt_coding_intro = """Your task is to answer a series of questions concerning
 prompt_coding_link = "\nHere is the news media article:\n"
 
 prompt_coding_end = "\nNow output answers to all of the questions concerning the news media article. Produce output in TSV format, in two columns, where each row corresponds to one question, with the first column contains the question names in the original order and the second column contains your response to each question.\n"
+
+prompt_image_description = "Please describe this image in detail in at most 50 words. Use the following information for context to help resolve ambiguity, but do not make unsafe assumptions simply because the context makes them more likely. The image is from a news media article about disruptive environmental protest.\n"
