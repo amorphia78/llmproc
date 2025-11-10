@@ -996,7 +996,7 @@ def output_article(filename, article, output_article_full, output_article_summar
     if output_individually and subdir is not None:
         production_article, replaced_fields, production_base_type = prepare_production_article(article,replacements_for_article)
         if subdir == "owe_specific":
-            image_alt_compulsory = False
+            image_alt_compulsory = True
         else:
             image_alt_compulsory = False
         production_content = formatted_article_output(production_article, False, output_picture_tags, suppress_id_in_html=True, pad_margins=False, complete_html=True, image_alt_compulsory=image_alt_compulsory)

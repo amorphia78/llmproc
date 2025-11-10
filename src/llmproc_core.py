@@ -130,16 +130,13 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
     import base64
     from PIL import Image
     from io import BytesIO
-    # Fetch the image from the URL
     response = requests.get(image_url)
     response.raise_for_status()
-    # Convert to base64
-    image_data = base64.b64encode(response.content).decode('utf-8')
-    # Determine media type from actual image content using PIL
+    image_content = resize_image_if_needed(response.content)
+    image_data = base64.b64encode(image_content).decode('utf-8')
     try:
-        with Image.open(BytesIO(response.content)) as img:
+        with Image.open(BytesIO(image_content)) as img:
             image_format = img.format.lower()
-            # Map PIL format names to MIME types
             format_to_mime = {
                 'jpeg': 'image/jpeg',
                 'jpg': 'image/jpeg',
@@ -149,10 +146,8 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
             }
             media_type = format_to_mime.get(image_format, 'image/jpeg')
     except Exception:
-        # Fallback to checking Content-Type header
         content_type = response.headers.get('Content-Type', 'image/jpeg')
         media_type = content_type.split(';')[0].strip()
-    # Create the messages with image content
     messages = [
         {
             "role": "user",
@@ -172,7 +167,6 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
             ]
         }
     ]
-    # Get response from Claude
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1000,
@@ -182,3 +176,51 @@ def describe_image_from_url(image_url, prompt="Please describe this image in det
     print(f"\nPrompt: {prompt}\n")
     print(f"Response: {response}\n")
     return response
+
+def resize_image_if_needed(image_content, max_size_mb=3.75, max_dimension=6000):
+    from PIL import Image
+    from io import BytesIO
+    max_size_bytes = max_size_mb * 1024 * 1024
+    needs_resize = False
+    if len(image_content) > max_size_bytes:
+        needs_resize = True
+        print(f"Image size ({len(image_content) / 1024 / 1024:.2f}MB) exceeds {max_size_mb}MB limit")
+    with Image.open(BytesIO(image_content)) as img:
+        width, height = img.size
+        if width > max_dimension or height > max_dimension:
+            needs_resize = True
+            print(f"Image dimensions ({width}x{height}) exceed {max_dimension}px limit")
+        if not needs_resize:
+            return image_content
+        print("Resizing image...")
+        if width > height:
+            new_width = min(width, max_dimension)
+            new_height = int((new_width / width) * height)
+        else:
+            new_height = min(height, max_dimension)
+            new_width = int((new_height / height) * width)
+        img_resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        output = BytesIO()
+        save_format = img.format if img.format else 'JPEG'
+        if save_format not in ['JPEG', 'PNG', 'WEBP']:
+            save_format = 'JPEG'
+        quality = 95
+        while quality > 20:
+            output.seek(0)
+            output.truncate()
+            if save_format == 'PNG':
+                img_resized.save(output, format=save_format, optimize=True)
+            else:
+                if img_resized.mode in ('RGBA', 'LA', 'P'):
+                    rgb_img = Image.new('RGB', img_resized.size, (255, 255, 255))
+                    rgb_img.paste(img_resized, mask=img_resized.split()[-1] if img_resized.mode == 'RGBA' else None)
+                    rgb_img.save(output, format='JPEG', quality=quality, optimize=True)
+                else:
+                    img_resized.save(output, format=save_format, quality=quality, optimize=True)
+            output_size = len(output.getvalue())
+            if output_size <= max_size_bytes:
+                print(f"Resized to {new_width}x{new_height}, {output_size / 1024 / 1024:.2f}MB (quality: {quality})")
+                return output.getvalue()
+            quality -= 10
+        print(f"Warning: Could not reduce image below {max_size_mb}MB limit")
+        return output.getvalue()
