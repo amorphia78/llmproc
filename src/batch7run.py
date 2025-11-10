@@ -17,11 +17,11 @@ real_quotas = {
 }
 
 test_quotas = {
-    "BBC": 4,
-    "The-Guardian": 2,
-    "Daily-Mail": 2,
-    "Sky": 1,
-    "Metro": 1,
+    "BBC": 2,
+    "The-Guardian": 1,
+    "Daily-Mail": 1,
+    "Sky": 0,
+    "Metro": 0,
     "Sun": 0,
     "Telegraph": 0,
     "The-Times": 0,

@@ -127,14 +127,11 @@ def process_url_with_cache(process_func, url):
 def describe_image_from_url(image_url, prompt = "Please describe this image in detail."):
     import requests
     import base64
-
     # Fetch the image from the URL
     response = requests.get(image_url)
     response.raise_for_status()
-
     # Convert to base64
     image_data = base64.b64encode(response.content).decode('utf-8')
-
     # Determine media type from URL extension
     if image_url.endswith('.webp'):
         media_type = 'image/webp'
@@ -146,7 +143,6 @@ def describe_image_from_url(image_url, prompt = "Please describe this image in d
         media_type = 'image/gif'
     else:
         media_type = 'image/jpeg'  # default fallback
-
     # Create the messages with image content
     messages = [
         {
@@ -167,7 +163,6 @@ def describe_image_from_url(image_url, prompt = "Please describe this image in d
             ]
         }
     ]
-
     # Get response from Claude
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -175,6 +170,6 @@ def describe_image_from_url(image_url, prompt = "Please describe this image in d
         temperature=0,
         messages=messages,
     ).content[0].text
-
-    print(f"Prompt: {prompt}\n")
+    print(f"\nPrompt: {prompt}\n")
     print(f"Response: {response}\n")
+    return response

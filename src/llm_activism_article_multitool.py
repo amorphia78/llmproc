@@ -610,7 +610,6 @@ def generate_image_html_github_url(article, image_data, output_picture_tags):
     '''
     return image_html
 
-
 def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     # Get the image URL from the outlet
     if "url_large" in image_data:
@@ -1316,11 +1315,37 @@ def load_correction_instructions(corrections_file, articles):
                 })
     return llm_corrections, replacement_corrections
 
-def generate_llm_image_descriptions( article ):
-    # This will probably call generate_llm_image_description for each image present
+def generate_llm_image_descriptions(article):
+    if not article.get("image"):
+        return
+    # Only process first 3 images (or fewer if article has fewer images)
+    num_images_to_process = min(3, len(article["image"]))
+    for image_index in range(num_images_to_process):
+        text_description = generate_llm_image_description_via_cache(article, image_index)
+        article["image"][image_index]['text_description'] = text_description
 
-def generate_llm_image_description( article, image_number ):
-    prompt = prompt_image_description + f"The article title is: '{title}'. The article subtitle is ''{subtitle}'. The image caption is '{caption}'."
+def generate_llm_image_description(article, image_index):
+    image = article["image"][image_index]
+    # Determine which URL to use, following production article logic
+    if "url_large" in image:
+        image_url = image["url_large"]
+    elif "url" in image:
+        image_url = image["url"]
+    else:
+        return ""
+    # Clean Telegraph URLs that have the /web/timestamp prefix
+    if image_url and "telegraph.co.uk/web/" in image_url:
+        match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_url)
+        if match:
+            image_url = match.group(1)
+    title = article['title']
+    subtitle = article.get('subtitle', '')
+    caption = image.get('caption', '')
+    prompt = pas.prompt_image_description + f"The article title is: '{title}'. The article subtitle is '{subtitle}'. The image caption is '{caption}'."
+    return llm.describe_image_from_url(image_url, prompt)
+
+def generate_llm_image_description_via_cache(article, image_index):
+    return llm.process_with_cache(generate_llm_image_description, article, image_index)
 
 def process_articles(
         key,
@@ -1453,6 +1478,8 @@ def process_articles(
             if output_article_full or output_article_summarised:
                 replacements_for_article = replacement_corrections_dict.get(article["id"], [])
                 output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
+                if article.get("passes_screening_specific") == "Yes":
+                    generate_llm_image_descriptions(article)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":
                     source = article.get("source", "Unknown")
