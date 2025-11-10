@@ -898,7 +898,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED", "OWE_SPECIFIC_LLM", "OWE_SPECIFIC_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS", "REPLACED_FIELDS"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS", "REPLACED_FIELDS"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -940,7 +940,8 @@ def output_summary_process(article):
     with open(summary_process_output_filename, 'w', encoding='utf-8') as f:
         f.write(summary_process_output)
 
-def output_article(filename, article, output_article_full, output_article_summarised, output_picture_tags,
+def output_article(filename, article, output_article_full, output_article_summarised,
+                   output_picture_tags,
                    output_individually=False, suppress_id_in_html=False, legacy_compilation=True,
                    compilation_format="none", compilation_inclusion_criterion=None, compilation_filename=None,
                    individual_output_base_path="output_folders/individual_article_output",

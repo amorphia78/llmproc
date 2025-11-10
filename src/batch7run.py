@@ -53,7 +53,7 @@ multitool.process_articles(
         individual_output_base_path="../coding_batches/batch7/batch7_individual_articles",
         human_coding_database_file="../coding_batches/batch7/batch7_human_coding.tsv",
         output_articles_individually=True,
-        coding_output_filename="../coding_batches/batch7/batch7_quota_screening.tsv",
+        coding_output_filename="../coding_batches/batch7/batch7_quota_screening_summarising.tsv",
         html_output_filename="../coding_batches/batch7/batch7all.html",
         compilation_format="side-by-side",
         compilation_output_filename="../coding_batches/batch7/batch7_side_by_side.html",
