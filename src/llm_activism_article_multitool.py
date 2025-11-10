@@ -490,6 +490,10 @@ def correct_specific_scraping_issues(articles):
         if article_id == "Daily-Mail_2024-03-15_Moment-Sopranos-star":
             if article.get("subtitle") == ".":
                 article["subtitle"] = None
+        # Correcting picture caption for Guardian image that had inappropriate alt-text instead
+        if article_id == "The-Guardian_2025-08-20_Police-investigate-sabotage-claims":
+            article["image"][1]["caption"] = "Shut the System activists claimed to be at the Barclays HQ in Northampton."
+
 
 def screen_and_code_article(article, do_screening=True, do_coding=False, use_owe_focussed=True, use_owe_specific=False,get_owe_focussed_llm_coding=False):
     print(f"Processing {article['id']} word count " + str(article['text_word_count']))
