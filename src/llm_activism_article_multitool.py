@@ -571,33 +571,25 @@ def generate_image_html_old(article, image_data): # This one can't cope with the
 def llm_describe_image(image_url):
     pass
 
+
 def generate_image_html_github_url(article, image_data, output_picture_tags):
-    github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
+    github_url = get_github_image_url(article, image_data)
     if type(image_data) is list:
         caption = image_data[0]
         image_path = image_data[1]
     else:
-        if "local_name" not in image_data or image_data.get("local_name") is None:
+        if github_url is None:
             # warnings.warn(f"Image for {image_data["url"]} has no local name", UserWarning)
             image_path = image_data["url"]
             article["scraped_image_missing"] = True
         else:
-            local_name = image_data['local_name']
-            local_path = image_data.get('local_path', '')
-            # Check if local_path is at the start of local_name
-            if local_name.startswith(local_path):
-                image_path = github_image_root + local_name
-            else:
-                # If not, combine local_path and local_name
-                image_path = github_image_root + local_path + '/' + local_name
-            # Remove any double slashes that might occur, except in https://
-            image_path = re.sub(r'(?<!:)//+', '/', image_path)
+            image_path = github_url
         caption = image_data['caption']
     if output_picture_tags:
         pic_tag = "#PH"
         caption_start_tag = "#CS "
         caption_end_tag = " #CE"
-        image_description = llm.process_url_with_cache(llm_describe_image,image_path)
+        image_description = llm.process_url_with_cache(llm_describe_image, image_path)
     else:
         pic_tag = ""
         caption_start_tag = ""
@@ -609,6 +601,22 @@ def generate_image_html_github_url(article, image_data, output_picture_tags):
     </figure>
     '''
     return image_html
+
+def get_github_image_url(article, image_data):
+    github_image_root = "https://raw.githubusercontent.com/claravdw/disruption/refs/heads/main/content_scraping/"
+    if "local_name" not in image_data or image_data.get("local_name") is None:
+        return None
+    local_name = image_data['local_name']
+    local_path = image_data.get('local_path', '')
+    # Check if local_path is at the start of local_name
+    if local_name.startswith(local_path):
+        image_path = github_image_root + local_name
+    else:
+        # If not, combine local_path and local_name
+        image_path = github_image_root + local_path + '/' + local_name
+    # Remove any double slashes that might occur, except in https://
+    image_path = re.sub(r'(?<!:)//+', '/', image_path)
+    return image_path
 
 def generate_image_html_outlet_url(article, image_data, output_picture_tags):
     # Get the image URL from the outlet
@@ -1332,7 +1340,7 @@ def generate_llm_image_description(article, image_index):
     elif "url" in image:
         image_url = image["url"]
     else:
-        return ""
+        return "Image description not available"
     # Clean Telegraph URLs that have the /web/timestamp prefix
     if image_url and "telegraph.co.uk/web/" in image_url:
         match = re.search(r'https://www\.telegraph\.co\.uk/web/[^/]+/(https://.*)', image_url)
@@ -1342,7 +1350,18 @@ def generate_llm_image_description(article, image_index):
     subtitle = article.get('subtitle', '')
     caption = image.get('caption', '')
     prompt = pas.prompt_image_description + f"The article title is: '{title}'. The article subtitle is '{subtitle}'. The image caption is '{caption}'."
-    return llm.describe_image_from_url(image_url, prompt)
+    # Try with outlet URL first
+    try:
+        return llm.describe_image_from_url(image_url, prompt)
+    except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException):
+        # If outlet URL fails, try GitHub URL
+        github_url = get_github_image_url(article, image)
+        if github_url is None:
+            return "Image description not available"
+        try:
+            return llm.describe_image_from_url(github_url, prompt)
+        except (llm.requests.exceptions.HTTPError, llm.requests.exceptions.RequestException):
+            return "Image description not available"
 
 def generate_llm_image_description_via_cache(article, image_index):
     return llm.process_with_cache(generate_llm_image_description, article, image_index)
@@ -1387,6 +1406,7 @@ def process_articles(
         quota_pad=0,
         human_coding=False,
         check_human_coding="no",
+        make_text_descriptions_for_images=False
 ):
     if config_file != "none":
         warnings.warn("Parameter selection via configuration file is deprecated and unlikely to work appropriately.", UserWarning)
@@ -1478,7 +1498,7 @@ def process_articles(
             if output_article_full or output_article_summarised:
                 replacements_for_article = replacement_corrections_dict.get(article["id"], [])
                 output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
-                if article.get("passes_screening_specific") == "Yes":
+                if make_text_descriptions_for_images and article.get("passes_screening_specific") == "Yes":
                     generate_llm_image_descriptions(article)
             if quota_tracker is not None and do_screening and use_owe_specific:
                 if article["passes_screening_specific"] == "Yes":

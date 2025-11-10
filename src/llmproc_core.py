@@ -2,6 +2,7 @@ import anthropic
 import os
 import json
 import hashlib
+import requests
 
 client = None
 no_cache = False
@@ -124,25 +125,38 @@ def process_url_with_cache(process_func, url):
             json.dump(data_to_store, ensure_ascii=False, indent=2, fp=f)  # type: ignore
         return result
 
-def describe_image_from_url(image_url, prompt = "Please describe this image in detail."):
+def describe_image_from_url(image_url, prompt="Please describe this image in detail."):
     import requests
     import base64
+    from PIL import Image
+    from io import BytesIO
+
     # Fetch the image from the URL
     response = requests.get(image_url)
     response.raise_for_status()
+
     # Convert to base64
     image_data = base64.b64encode(response.content).decode('utf-8')
-    # Determine media type from URL extension
-    if image_url.endswith('.webp'):
-        media_type = 'image/webp'
-    elif image_url.endswith('.jpg') or image_url.endswith('.jpeg'):
-        media_type = 'image/jpeg'
-    elif image_url.endswith('.png'):
-        media_type = 'image/png'
-    elif image_url.endswith('.gif'):
-        media_type = 'image/gif'
-    else:
-        media_type = 'image/jpeg'  # default fallback
+
+    # Determine media type from actual image content using PIL
+    try:
+        with Image.open(BytesIO(response.content)) as img:
+            image_format = img.format.lower()
+
+            # Map PIL format names to MIME types
+            format_to_mime = {
+                'jpeg': 'image/jpeg',
+                'jpg': 'image/jpeg',
+                'png': 'image/png',
+                'gif': 'image/gif',
+                'webp': 'image/webp'
+            }
+            media_type = format_to_mime.get(image_format, 'image/jpeg')
+    except Exception:
+        # Fallback to checking Content-Type header
+        content_type = response.headers.get('Content-Type', 'image/jpeg')
+        media_type = content_type.split(';')[0].strip()
+
     # Create the messages with image content
     messages = [
         {
@@ -163,6 +177,7 @@ def describe_image_from_url(image_url, prompt = "Please describe this image in d
             ]
         }
     ]
+
     # Get response from Claude
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -170,6 +185,8 @@ def describe_image_from_url(image_url, prompt = "Please describe this image in d
         temperature=0,
         messages=messages,
     ).content[0].text
+
     print(f"\nPrompt: {prompt}\n")
     print(f"Response: {response}\n")
+
     return response
