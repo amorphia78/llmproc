@@ -903,14 +903,13 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS", "REPLACED_FIELDS"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
 
 def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     replaced_fields_str = ','.join(article.get('replaced_fields', [])) if article.get('replaced_fields') else ''
-
     values = [article["id"], article["title"], article["url"], "original", str(article["text_word_count"])]
     if do_screening:
         values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
@@ -921,7 +920,8 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             article["passes_screening_specific"],
             article.get("summary_check", "no_check"),
             article.get("correction_instructions", ""),
-            replaced_fields_str
+            replaced_fields_str,
+            article.get("plausibility_check", "unchecked")
         ]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
@@ -929,10 +929,10 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             coding_output_file.write(
                 "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")
             if do_summarising and article["summarised"]:
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 13)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 14)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_summary"][code_name]) for code_name in pas.rating_code_names) + "\n")
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 13)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 14)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_legacy_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
         else:
@@ -1381,8 +1381,60 @@ def generate_llm_image_description(article, image_index):
 def generate_llm_image_description_via_cache(article, image_index):
     return llm.process_with_cache(generate_llm_image_description, article, image_index)
 
-def do_final_production_check(article):
-    pass
+# A debug function
+def inject_plausibility_issue(article, target="body"):
+    problematic_sentence = "The zebra jumped over the quantum refrigerator while discussing Byzantine economics."
+    html_content = article.get('production_content', '')
+    if target == "body":
+        p_match = re.search(r'<p>(.*?)</p>', html_content, re.DOTALL)
+        if p_match:
+            p_content = p_match.group(1)
+            if '<br><br>' in p_content:
+                modified_content = p_content.replace('<br><br>', f'<br><br>{problematic_sentence} ', 1)
+                html_content = html_content.replace(p_content, modified_content, 1)
+            else:
+                original_p = p_match.group(0)
+                modified_p = original_p.replace('</p>', f' {problematic_sentence}</p>', 1)
+                html_content = html_content.replace(original_p, modified_p, 1)
+    elif target == "caption":
+        figcaption_match = re.search(r'<figcaption align="center">(.*?)</figcaption>', html_content, re.DOTALL)
+        if figcaption_match:
+            original_figcaption = figcaption_match.group(0)
+            modified_figcaption = original_figcaption.replace('</figcaption>', f' {problematic_sentence}</figcaption>',1)
+            html_content = html_content.replace(original_figcaption, modified_figcaption, 1)
+    elif target == "alt_text":
+        img_matches = list(re.finditer(r'<img[^>]+alt="([^"]*)"[^>]*>', html_content))
+        if len(img_matches) >= 2:
+            second_img = img_matches[1]
+            original_img_tag = second_img.group(0)
+            original_alt_text = second_img.group(1)
+            modified_img_tag = original_img_tag.replace(f'alt="{original_alt_text}"',
+                                                        f'alt="{original_alt_text} {problematic_sentence}"', 1)
+            html_content = html_content.replace(original_img_tag, modified_img_tag, 1)
+    article['production_content'] = html_content
+
+def perform_plausibility_check_llm_via_cache(article):
+    return llm.process_with_cache(perform_plausibility_check_llm, article)
+
+def perform_plausibility_check_llm(article):
+    production_content = article.get('production_content', '')
+    prompt = pas.prompt_final_plausibility_check_intro + production_content + pas.prompt_final_plausibility_check_end
+    response = llm.send_prompt(prompt, "processor")
+    return response
+
+def do_final_production_check(article, debug_inject_plausibility_issue=False, debug_injection_target="alt_text", debug_exit_on_failure=False):
+    if article.get("passes_screening_specific") != "Yes":
+        article["plausibility_check"] = "unchecked"
+        return
+    if debug_inject_plausibility_issue:
+        inject_plausibility_issue(article, debug_injection_target)
+    check_result = perform_plausibility_check_llm_via_cache(article)
+    article["plausibility_check"] = check_result
+    if debug_exit_on_failure and "check failed" in check_result.lower():
+        print(f"\nPlausibility check failed for article: {article['id']}")
+        print(f"Check result: {check_result}")
+        print(f"Article: {article['production_content']}")
+        sys.exit(1)
 
 def process_articles(
         key,
