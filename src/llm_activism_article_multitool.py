@@ -1243,6 +1243,8 @@ def handle_owe_specific_coding( article, human_coding, check_human_coding, datab
         article["passes_screening_specific"] = "Yes"
     else:
         article["passes_screening_specific"] = "No"
+    if article["owe_specific_human"] in ("Not even owe", "Owe but fails other criteria"):
+        article["passes_screening"] = "No"
     if check_human_coding == "all" or ( check_human_coding == "passes" and article["passes_screening_specific"] == "Yes" ):
         display_article_for_human_coding(article)
         check_human_code_display(article, database_file)
