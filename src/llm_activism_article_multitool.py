@@ -910,7 +910,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "BALANCE_CORRECTION", "CORRECTION_INSTRUCTIONS_TO_LLM", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "BALANCE_CORRECTION", "CORRECTION_INSTRUCTIONS_TO_LLM", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK_LLM"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
