@@ -1051,7 +1051,7 @@ def prepare_production_article(article, replacements_for_article):
         old = replacement['replaced_string']
         old = old.encode().decode('unicode_escape')
         new = replacement['replacement_string']
-        new = new.encode().decode('unicode_escape')
+        new = new.replace('\\n', '\n')
         new = new.replace('[DELETE]', '')
         is_fill_blank = (old == '[FILL_BLANK]')
         if field.startswith('caption'):
