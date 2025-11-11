@@ -17,10 +17,10 @@ real_quotas = {
 }
 
 test_quotas = {
-    "BBC": 3,
-    "The-Guardian": 3,
-    "Daily-Mail": 3,
-    "Sky": 0,
+    "BBC": 4,
+    "The-Guardian": 4,
+    "Daily-Mail": 4,
+    "Sky": 2,
     "Metro": 0,
     "Sun": 0,
     "Telegraph": 0,
@@ -62,7 +62,7 @@ multitool.process_articles(
         human_coding=True,
         check_human_coding="no",
         make_text_descriptions_for_images=True,
-        final_production_check=False,
+        final_production_check=True,
     )
 
 def dont_run():

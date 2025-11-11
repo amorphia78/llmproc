@@ -205,20 +205,27 @@ def do_summarisation_for_article(article, do_coding, very_short_summary, check_s
         if do_summary_corrections:
             article_id = article["id"]
             if article_id in llm_correction_instructions_dict:
-                article["correction_instructions"] = llm_correction_instructions_dict[article_id]
+                correction_data = llm_correction_instructions_dict[article_id]
+                article["correction_instructions"] = correction_data['instructions']
+                article["correction_note"] = correction_data['note']
+                match = re.search(r'balance \(([^)]+)\)', article.get("correction_note", ""))
+                article["balance_correction"] = match.group(1) if match else ""
                 article["corrected_summary"] = do_summary_correction_via_cache(article)
                 article["corrected_summary_word_count"] = count_words(article["corrected_summary"])
                 article["has_corrected_summary"] = True
             else:
                 article["has_corrected_summary"] = False
                 article["correction_instructions"] = ""
+                article["correction_note"] = ""
         else:
             article["has_corrected_summary"] = False
             article["correction_instructions"] = ""
+            article["correction_note"] = ""
     else:
         article["summarised"] = False
         article["has_corrected_summary"] = False
         article["correction_instructions"] = ""
+        article["correction_note"] = ""
         if do_summary_corrections and article["id"] in llm_correction_instructions_dict:
             print(f"ERROR: Article {article['id']} has correction instructions but does not meet criteria for summarisation")
             sys.exit(1)
@@ -903,7 +910,7 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "CORRECTION_INSTRUCTIONS", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "BALANCE_CORRECTION", "CORRECTION_INSTRUCTIONS_TO_LLM", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
@@ -919,6 +926,7 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             article["passes_screening"],
             article["passes_screening_specific"],
             article.get("summary_check", "no_check"),
+            article.get("balance_correction", ""),
             article.get("correction_instructions", ""),
             replaced_fields_str,
             article.get("plausibility_check", "unchecked")
@@ -929,10 +937,10 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             coding_output_file.write(
                 "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")
             if do_summarising and article["summarised"]:
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 14)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 15)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_summary"][code_name]) for code_name in pas.rating_code_names) + "\n")
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 14)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 15)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_legacy_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
         else:
@@ -1308,7 +1316,11 @@ def load_correction_instructions(corrections_file, articles):
                 if not llm_corrections_field:
                     print(f"ERROR: Line {line_num} has correction_type 'llm' but empty llm_corrections field")
                     sys.exit(1)
-                llm_corrections[article_id] = llm_corrections_field
+                correction_note = row['correction_note']
+                llm_corrections[article_id] = {
+                    'note': correction_note, # Might not be about LLM corrections, just somewhere to put it
+                    'instructions': llm_corrections_field
+                }
             elif correction_type == 'replacement':
                 valid_fields = ['title', 'subtitle', 'text', 'caption0', 'caption1', 'caption2']
                 if replacement_field not in valid_fields:
@@ -1429,6 +1441,7 @@ def do_final_production_check(article, debug_inject_plausibility_issue=False, de
     if debug_inject_plausibility_issue:
         inject_plausibility_issue(article, debug_injection_target)
     check_result = perform_plausibility_check_llm_via_cache(article)
+    check_result = re.sub(r'\s+', ' ', check_result)
     article["plausibility_check"] = check_result
     if debug_exit_on_failure and "check failed" in check_result.lower():
         print(f"\nPlausibility check failed for article: {article['id']}")
