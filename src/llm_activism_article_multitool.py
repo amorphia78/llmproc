@@ -1307,7 +1307,11 @@ def handle_owe_general_coding(article, human_coding_general, database_file_gener
         with open(database_file_general, 'r', encoding='utf-8') as f:
             for line in f:
                 parts = line.strip().split('\t')
-                if len(parts) == 2 and parts[0] == article["id"] and parts[1] == "not owe":
+                if (
+                    len(parts) == 2
+                    and parts[0] == article["id"]
+                    and parts[1].startswith("not owe")
+                ):
                     human_override = "not owe"
                     break
     if human_override == "not owe":
@@ -1711,11 +1715,16 @@ def process_articles(
                 break
     if compilation_format == "side-by-side":
         end_side_by_side_html(compilation_output_filename)
-    if quota_tracker is not None and not check_quotas_met(quota_tracker, source_quotas):
+    if quota_tracker is not None and (not check_quotas_met(quota_tracker, source_quotas) or
+                                      not check_quotas_met(quota_tracker_general, source_quotas_general)):
         print("\nWARNING: Ran out of articles before meeting all quotas!")
-        print("Current quota status:")
+        print("Owe-specific quota status:")
         for source, target in source_quotas.items():
             current = quota_tracker.get(source, 0)
+            print(f"  {source}: {current}/{target}")
+        print("Owe-general quota status:")
+        for source, target in source_quotas_general.items():
+            current = quota_tracker_general.get(source, 0)
             print(f"  {source}: {current}/{target}")
         warnings.warn("Not all source quotas were met - ran out of articles", UserWarning)
 
