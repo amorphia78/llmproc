@@ -1,5 +1,3 @@
-# Adding a comment simply to allow me to make the commit "Versions used for RA coding of production owe-specific articles"
-
 screening_code_names = ["OWE", "SPURIOUS", "SPECIFIC", "LETTER", "ROUNDUP", "NON-UK EDITION", "NON-ENGLISH", "VIDEO", "NON-DISRUPTIVE OWE"]
 
 rating_code_names_b2 = ["Number of protestors", "Target category", "Activity being deliberately disrupted", "Activity being accidentally disrupted", "Nature of disruption", "Visual appearance costumes", "Visual appearance not ordinary", "Demographics", "Demand", "Location", "Acceptance of protest", "Believe in general acceptability", "Believe in general unacceptability", "Protester demographic diversity", "Radicalness of demand", "Level of disruption", "Otherness", "Political slant", "Issue bundling", "Portrayal", "Attention to message", "Attention to disruption" ]
@@ -34,6 +32,13 @@ Here is the original article:
 prompt_summarise_intro_old = """Please process a news media article for me. The article contains some information about a disruptive primary protest action taken by one or more environmental protesters. The primary protest action is the most prominent disruptive environmental protest action mentioned in the article. The article may or may not also contain information about secondary separate actions taken by one or more protesters. I would like you to produce a summarised version of the whole article, containing as much information as possible about the primary protest action, using the same wording as the original, but with no information about any secondary protest actions. 
 
 Make sure your summary contains the following information, if the information is also present in the article: the number of people involved in the protest, the target of the disruption (e.g. a company or government building), the jobs or backgrounds of the protesters, and the demands of the protesters. Try to preserve the tone of the article (positive or negative towards the protests).
+
+The target word count is 300 words.
+
+Here is the original article:
+"""
+
+prompt_summarise_general_intro = """Please process a news media article for me. The article will be related in some way to disruptive environmental protest. It is important that when summarising the article, balance is kept between content that might be seen as supportive of or opposed to disruptive environmental protest. Examples of supportive content would be quotes from protesters or other individuals justifying their protesting, or journalistic commentary that is supportive of it. Examples of opposing content would be quotes or journalistic commentary that is critical. The balance between the amounts of supportive or opposing content must be the same in the summary as in the original article.
 
 The target word count is 300 words.
 

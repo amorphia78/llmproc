@@ -183,12 +183,15 @@ def sanitise_ids(articles):
         warnings.warn("Warning: some articles with duplicate IDs were removed.", UserWarning)
     return sanitized_articles
 
-def do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict):
+def do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict, is_owe_general=False):
     if article["text_word_count"] > 350 or very_short_summary:
-        article["summary"] = summarise_article_via_cache(article, very_short_summary)
+        if is_owe_general:
+            article["summary"] = summarise_article_general_via_cache(article)
+        else:
+            article["summary"] = summarise_article_via_cache( article, very_short_summary )
         article["summarised"] = True
         article["summary_word_count"] = count_words(article["summary"])
-        if check_summary:
+        if check_summary and not is_owe_general:  # Skip summary checking for owe-general
             article["summary_check"] = do_summary_check_via_cache(article)
         if do_coding:
             article["summary_coded"] = code_article(article, "summary")
@@ -244,6 +247,18 @@ def summarise_article(article, very_short_summary):
 
 def summarise_article_via_cache(article, very_short_summary):
     return llm.process_with_cache( summarise_article, article, very_short_summary )
+
+def summarise_article_general( article ):
+    content = "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"]
+    prompt = pas.prompt_summarise_general_intro + content + pas.prompt_summarise_end
+    response = llm.send_prompt(prompt, "summariser", article["title"])
+    if response.startswith(article["title"]):
+        return response[len(article["title"]):].lstrip()
+    else:
+        raise ValueError("The summary did not begin with the article title.")
+
+def summarise_article_general_via_cache( article ):
+    return llm.process_with_cache( summarise_article_general, article )
 
 def do_summarisation_check(article):
     content = "ORIGINAL ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["text"] + "\n\nSUMMARISED ARTICLE\n\n" + "TITLE: " + article["title"] + "\n" + article["subtitle"] + "\n" + article["summary"]
@@ -779,8 +794,14 @@ def end_side_by_side_html(filename):
         f.write(html_footer)
 
 def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_in_html, replacements_for_article):
+    if article['selected_for_general'] == "Yes":
+        background = ' style="background-color: #fff9c4;"'
+        title_prefix = 'NON_SPECIFIC: '
+    else:
+        background = ''
+        title_prefix = ''
     # Left column: Always original
-    left_html = "<h3>Original</h3>" + formatted_article_output(article, output_summary=False,
+    left_html = f"{title_prefix}<h3>Original</h3>" + formatted_article_output(article, output_summary=False,
                                                                output_picture_tags=output_picture_tags,
                                                                suppress_id_in_html=suppress_id_in_html,
                                                                pad_margins=False, complete_html=False)
@@ -809,7 +830,7 @@ def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_
                                                          output_picture_tags=output_picture_tags,
                                                          suppress_id_in_html=suppress_id_in_html, pad_margins=False,
                                                          complete_html=False)
-    row_html = f"""<tr>
+    row_html = f"""<tr{background}>
 <td>{left_html}</td>
 <td>{middle_html}</td>
 <td>{right_html}</td>
@@ -910,13 +931,14 @@ def select_articles_weighted_random(articles, stop_after, seed=420):
 
 def output_coding_headers(file_name, do_screening, do_coding):
     base_headers = ["ID", "Title", "URL", "Version", "Word count"]
-    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SUMMARY_CHECK", "BALANCE_CORRECTION", "CORRECTION_INSTRUCTIONS_TO_LLM", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK_LLM"] if do_screening else [])
+    screening_headers = ([*pas.screening_code_names, "OWE_FOCUSSED_LLM", "OWE_SPECIFIC_LLM", "OWE_HUMAN", "PASSES_SCREENING", "PASSES_SCREENING_SPECIFIC", "SELECTED_FOR_GENERAL", "SUMMARY_CHECK", "BALANCE_CORRECTION", "CORRECTION_INSTRUCTIONS_TO_LLM", "REPLACED_FIELDS", "PLAUSIBILITY_CHECK_LLM"] if do_screening else [])
     coding_headers = (pas.rating_code_names if do_coding else [])
     with open(file_name, 'w') as f:
         f.write("\t".join([*base_headers, *screening_headers, *coding_headers]) + "\n")
 
 def output_codes(file_name, article, do_coding, do_screening, do_summarising):
     replaced_fields_str = ','.join(article.get('replaced_fields', [])) if article.get('replaced_fields') else ''
+    selected_for_general = article.get('selected_for_general', 'No')
     values = [article["id"], article["title"], article["url"], "original", str(article["text_word_count"])]
     if do_screening:
         values += [str(article["screening_codes"][code_name]) for code_name in pas.screening_code_names] + [
@@ -925,6 +947,7 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             article["owe_specific_human"],
             article["passes_screening"],
             article["passes_screening_specific"],
+            selected_for_general,
             article.get("summary_check", "no_check"),
             article.get("balance_correction", ""),
             article.get("correction_instructions", ""),
@@ -937,10 +960,10 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
             coding_output_file.write(
                 "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")
             if do_summarising and article["summarised"]:
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 15)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "summarised", str(article["summary_word_count"])]) + "\t" * 16)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_summary"][code_name]) for code_name in pas.rating_code_names) + "\n")
-                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 15)
+                coding_output_file.write("\t".join([article["id"], article["title"], article["url"], "legacy_resummarised", str(article["legacy_resummary_word_count"])]) + "\t" * 16)
                 coding_output_file.write("\t" + "\t".join(
                     str(article["codes_legacy_resummary"][code_name]) for code_name in pas.rating_code_names) + "\n")
         else:
@@ -967,7 +990,7 @@ def output_article(filename, article, output_article_full, output_article_summar
     if output_individually:
         if article.get("passes_screening_specific") == "Yes":
             subdir = "owe_specific"
-        elif article.get("passes_screening") == "Yes":
+        elif article.get("passes_screening_general") == "Yes":
             subdir = "owe_general"
         if subdir is not None:
             base_dir = os.path.join(individual_output_base_path, subdir)
@@ -1002,7 +1025,13 @@ def output_article(filename, article, output_article_full, output_article_summar
             individual_filename = os.path.join(base_dir, "llm_corrected", f"{sanitise_name(article['id'])}.html")
             with open(individual_filename, 'w', encoding='utf-8') as f:
                 f.write(corrected_content)
-    if output_individually and subdir is not None:
+    # Only output to production if article is selected for quota
+    should_output_production = False
+    if subdir == "owe_specific" and article.get("passes_screening_specific") == "Yes":
+        should_output_production = True
+    elif subdir == "owe_general" and article.get("selected_for_general") == "Yes":
+        should_output_production = True
+    if output_individually and subdir is not None and should_output_production:
         production_article, replaced_fields, production_base_type = prepare_production_article(article,replacements_for_article)
         if subdir == "owe_specific":
             image_alt_compulsory = True
@@ -1021,7 +1050,7 @@ def output_article(filename, article, output_article_full, output_article_summar
             article['replaced_fields'] = replaced_fields
             article['production_base_type'] = production_base_type
     if compilation_inclusion_criterion is not None:
-        if article[compilation_inclusion_criterion] == "Yes":
+        if article.get(compilation_inclusion_criterion) == "Yes":
             if compilation_format == "side-by-side" and compilation_filename is not None:
                 append_side_by_side_row(compilation_filename, article, output_picture_tags, suppress_id_in_html,replacements_for_article)
     return production_content
@@ -1269,6 +1298,25 @@ def handle_owe_specific_coding( article, human_coding, check_human_coding, datab
         display_article_for_human_coding(article)
         check_human_code_display(article, database_file)
 
+def handle_owe_general_coding(article, human_coding_general, database_file_general):
+    if article.get("owe_focussed_llm") != "Yes" or article.get("owe_specific_llm") != "No":
+        article["passes_screening_general"] = "No"
+        return
+    human_override = None
+    if os.path.exists(database_file_general):
+        with open(database_file_general, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) == 2 and parts[0] == article["id"] and parts[1] == "not owe":
+                    human_override = "not owe"
+                    break
+    if human_override == "not owe":
+        article["passes_screening_general"] = "No"
+        article["owe_general_human_override"] = "Yes"
+    else:
+        article["passes_screening_general"] = "Yes"
+        article["owe_general_human_override"] = "No"
+
 def load_correction_instructions(corrections_file, articles):
     llm_corrections = {}
     replacement_corrections = {}
@@ -1475,6 +1523,7 @@ def process_articles(
         compilation_inclusion_criterion="passes_screening_specific",
         individual_output_base_path="output_folders/individual_article_output",
         human_coding_database_file="finalBatch7HumanCoding.tsv",
+        human_coding_database_file_general="batch7_human_coding_general.tsv",
         output_detailed_word_counts=False,
         article_selection="random",
         article_exclusion_list="none",
@@ -1553,49 +1602,104 @@ def process_articles(
         print(f"Original quotas: {source_quotas}")
         print(f"Adjusted quotas: {adjusted_quotas}")
         source_quotas = adjusted_quotas
+    source_quotas_general = None
+    quota_tracker_general = None
+    if source_quotas is not None:
+        source_quotas_general = {source: round(count / 10) for source, count in source_quotas.items()}
+        quota_tracker_general = {}
+        print(f"Owe-specific quotas: {source_quotas}")
+        print(f"Owe-general quotas: {source_quotas_general}")
     for article in articles_to_loop:
         sys.stdout.flush()
-        if quota_tracker is not None and check_quotas_met(quota_tracker, source_quotas):
-            print("All source quotas met!")
+        # Check if all quotas are met
+        all_specific_met = quota_tracker is None or check_quotas_met(quota_tracker, source_quotas)
+        all_general_met = quota_tracker_general is None or check_quotas_met(quota_tracker_general,
+                                                                            source_quotas_general)
+        if all_specific_met and all_general_met:
+            print("All source quotas (both owe-specific and owe-general) met!")
             break
         if process_only_selected and not article["selected_for_processing"]: continue
-        if quota_tracker is not None:  # Skip if this source has already met its quota
+        # Check if this source needs more articles for either quota
+        if quota_tracker is not None:
             source = article.get("source", "Unknown")
-            source_target = source_quotas.get(source, 0)
-            source_current = quota_tracker.get(source, 0)
-            if source_current >= source_target:
+            source_target_specific = source_quotas.get(source, 0)
+            source_current_specific = quota_tracker.get(source, 0)
+            source_target_general = source_quotas_general.get(source, 0)
+            source_current_general = quota_tracker_general.get(source, 0)
+            if source_current_specific >= source_target_specific and source_current_general >= source_target_general:
                 continue
-        processing_successful = screen_and_code_article(article, do_screening, do_coding, use_owe_focussed, use_owe_specific, get_owe_focussed_llm_coding )
+        processing_successful = screen_and_code_article(article, do_screening, do_coding, use_owe_focussed,
+                                                        use_owe_specific, get_owe_focussed_llm_coding)
         if processing_successful:
             ids_included_in_batch.append(article["id"])
             if output_detailed_word_counts: output_word_counts(article)
+            article["selected_for_general"] = "No"
             if do_screening and use_owe_specific:
                 if article["passes_screening"] == "Yes":
                     handle_owe_specific_coding( article, human_coding, check_human_coding, human_coding_database_file )
                 else:
                     article["owe_specific_human"] = "Unused"
                     article["passes_screening_specific"] = "No"
+                if quota_tracker is not None:
+                    source = article.get("source", "Unknown")
+                    source_target_specific = source_quotas.get(source, 0)
+                    source_current_specific = quota_tracker.get(source, 0)
+                    if article.get("passes_screening_specific") == "Yes" and \
+                            source_current_specific >= source_target_specific:
+                        continue
+                if article["owe_focussed_llm"] == "Yes" and article["owe_specific_llm"] == "No":
+                    handle_owe_general_coding(article, human_coding, human_coding_database_file_general)
+                else:
+                    article["passes_screening_general"] = "No"
                 if do_summarising and article["passes_screening_specific"] == "Yes":
-                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary,
+                                                 do_summary_corrections, llm_correction_instructions_dict,
+                                                 is_owe_general=False)
+                elif do_summarising and article["passes_screening_general"] == "Yes":
+                    if quota_tracker_general is not None:
+                        source = article.get("source", "Unknown")
+                        source_target_general = source_quotas_general.get(source, 0)
+                        source_current_general = quota_tracker_general.get(source, 0)
+                        if source_current_general < source_target_general:
+                            article["selected_for_general"] = "Yes"
+                            do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict,is_owe_general=True)
+                        else:
+                            article["selected_for_general"] = "No"
+                    else:
+                        do_summarisation_for_article(article, do_coding, very_short_summary, check_summary,do_summary_corrections, llm_correction_instructions_dict, is_owe_general=True)
             elif do_summarising:
                 if not do_screening or article["passes_screening"] == "Yes":
-                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary, do_summary_corrections, llm_correction_instructions_dict)
-            if output_article_full or output_article_summarised:
-                if make_text_descriptions_for_images and article.get("passes_screening_specific") == "Yes":
-                    generate_llm_image_descriptions(article)
-                replacements_for_article = replacement_corrections_dict.get(article["id"], [])
-                article['production_content'] = output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags, output_articles_individually, suppress_id_in_html, legacy_compilation=False, compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None, compilation_inclusion_criterion=compilation_inclusion_criterion, individual_output_base_path=individual_output_base_path, replacements_for_article=replacements_for_article)
-                if final_production_check and article.get("passes_screening_specific") == "Yes":
-                    do_final_production_check(article)
+                    do_summarisation_for_article(article, do_coding, very_short_summary, check_summary,do_summary_corrections, llm_correction_instructions_dict)
             if quota_tracker is not None and do_screening and use_owe_specific:
+                source = article.get("source", "Unknown")
                 if article["passes_screening_specific"] == "Yes":
-                    source = article.get("source", "Unknown")
                     quota_tracker[source] = quota_tracker.get(source, 0) + 1
-                    all_sources = sorted(set(quota_tracker.keys()) | set(source_quotas.keys()))
-                    total_tracker = sum(quota_tracker.values())
-                    total_required = sum(source_quotas.values())
-                    print( f"Quotas: {', '.join(f'{s}: {quota_tracker.get(s, 0)}/{source_quotas.get(s, 0)}' for s in all_sources)}")
-                    print(f"Total: {total_tracker}/{total_required}")
+                    article['quota_included'] = "Yes"
+                if article["selected_for_general"] == "Yes":
+                    quota_tracker_general[source] = quota_tracker_general.get(source, 0) + 1
+                    article['quota_included'] = "Yes"
+                all_sources = sorted(
+                    set(quota_tracker.keys()) | set(source_quotas.keys()) | set(quota_tracker_general.keys()))
+                total_tracker_specific = sum(quota_tracker.values())
+                total_required_specific = sum(source_quotas.values())
+                total_tracker_general = sum(quota_tracker_general.values())
+                total_required_general = sum(source_quotas_general.values())
+                print(
+                    f"Owe-specific quotas: {', '.join(f'{s}: {quota_tracker.get(s, 0)}/{source_quotas.get(s, 0)}' for s in all_sources)}")
+                print(
+                    f"Owe-general quotas: {', '.join(f'{s}: {quota_tracker_general.get(s, 0)}/{source_quotas_general.get(s, 0)}' for s in all_sources)}")
+                print(
+                    f"Totals - Specific: {total_tracker_specific}/{total_required_specific}, General: {total_tracker_general}/{total_required_general}")
+            if output_article_full or output_article_summarised:
+                if make_text_descriptions_for_images:
+                    if article.get("passes_screening_specific") == "Yes" or article.get(
+                            "selected_for_general") == "Yes":
+                        generate_llm_image_descriptions(article)
+                replacements_for_article = replacement_corrections_dict.get(article["id"], [])
+                article['production_content'] = output_article(html_output_filename, article, output_article_full, output_article_summarised, output_picture_tags,output_articles_individually, suppress_id_in_html, legacy_compilation=False,compilation_format=compilation_format, compilation_filename=compilation_output_filename if compilation_format == "side-by-side" else None,compilation_inclusion_criterion=compilation_inclusion_criterion,individual_output_base_path=individual_output_base_path,replacements_for_article=replacements_for_article)
+                if final_production_check:
+                    if article.get("passes_screening_specific") == "Yes" or article.get("selected_for_general") == "Yes":
+                        do_final_production_check(article)
             if do_screening or do_coding:
                 output_codes(coding_output_filename, article, do_coding, do_screening, do_summarising)
             if output_article_summary_process and do_summarising:
