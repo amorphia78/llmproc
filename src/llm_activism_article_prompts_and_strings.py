@@ -1,3 +1,5 @@
+# Adding a comment simply to allow me to make the commit "Versions used for RA coding of production owe-specific articles"
+
 screening_code_names = ["OWE", "SPURIOUS", "SPECIFIC", "LETTER", "ROUNDUP", "NON-UK EDITION", "NON-ENGLISH", "VIDEO", "NON-DISRUPTIVE OWE"]
 
 rating_code_names_b2 = ["Number of protestors", "Target category", "Activity being deliberately disrupted", "Activity being accidentally disrupted", "Nature of disruption", "Visual appearance costumes", "Visual appearance not ordinary", "Demographics", "Demand", "Location", "Acceptance of protest", "Believe in general acceptability", "Believe in general unacceptability", "Protester demographic diversity", "Radicalness of demand", "Level of disruption", "Otherness", "Political slant", "Issue bundling", "Portrayal", "Attention to message", "Attention to disruption" ]
