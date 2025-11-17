@@ -1541,6 +1541,7 @@ def process_articles(
         date_range_type="embargo",
         source_quotas=None,
         quota_pad=0,
+        general_quota_bodge=False,
         human_coding=False,
         check_human_coding="no",
         make_text_descriptions_for_images=False,
@@ -1610,6 +1611,9 @@ def process_articles(
     quota_tracker_general = None
     if source_quotas is not None:
         source_quotas_general = {source: round(count / 10) for source, count in source_quotas.items()}
+        if general_quota_bodge:
+           source_quotas_general["Sun"] = 0
+           source_quotas_general["Mirror"] = 1
         quota_tracker_general = {}
         print(f"Owe-specific quotas: {source_quotas}")
         print(f"Owe-general quotas: {source_quotas_general}")

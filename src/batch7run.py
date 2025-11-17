@@ -38,6 +38,7 @@ multitool.process_articles(
         article_order_random_seed=7,
         source_quotas=real_quotas,
         quota_pad=0,
+        general_quota_bodge=True,
         get_owe_focussed_llm_coding=True,
         use_owe_focussed=True,
         use_owe_specific=True,
