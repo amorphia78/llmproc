@@ -796,12 +796,12 @@ def end_side_by_side_html(filename):
 def append_side_by_side_row(filename, article, output_picture_tags, suppress_id_in_html, replacements_for_article):
     if article['selected_for_general'] == "Yes":
         background = ' style="background-color: #fff9c4;"'
-        title_prefix = 'NON_SPECIFIC: '
+        original_label_suffix = '[NON_SPECIFIC]'
     else:
         background = ''
-        title_prefix = ''
+        original_label_suffix = ''
     # Left column: Always original
-    left_html = f"{title_prefix}<h3>Original</h3>" + formatted_article_output(article, output_summary=False,
+    left_html = f"<h3>Original {original_label_suffix}</h3>" + formatted_article_output(article, output_summary=False,
                                                                output_picture_tags=output_picture_tags,
                                                                suppress_id_in_html=suppress_id_in_html,
                                                                pad_margins=False, complete_html=False)
@@ -1488,7 +1488,7 @@ def perform_plausibility_check_llm(article):
     return response
 
 def do_final_production_check(article, debug_inject_plausibility_issue=False, debug_injection_target="alt_text", debug_exit_on_failure=False):
-    if article.get("passes_screening_specific") != "Yes":
+    if article.get("passes_screening_specific") != "Yes" and article.get("selected_for_general") != "Yes":
         article["plausibility_check"] = "unchecked"
         return
     if debug_inject_plausibility_issue:

@@ -137,3 +137,17 @@ The-Guardian_2025-08-20_Police-investigate-sabotage-claims	replacement	format (p
 Daily-Mail_2024-06-20_Is-nothing-sacred	llm	incongruity (clarity)	"It is a problem that the article title focuses on the JSO backed Dale Vince, but this issue is almost entirely removed from the summary, creating incongruity between article title and body. At the lest, the sentences beginning 'Mr Sunak rounded on major Labour backer Dale Vince' must be included."			
 BBC_2023-12-18_Extinction-Rebellion-cofounder-Gail	replacement	format (typo)		caption1	"could be jailed she commits another crime"	"could be jailed if she commits another crime"
 Sun_2024-06-08_ECO-WAR-We-were	replacement	incongruity (clarity)		text	"turn the tide in their favour."	"turn the tide in their favour.\nOn Thin Ice: Putin v Greenpeace starts on tomorrow, BBC Two at 9pm."
+The-Guardian_2023-10-25_Fossil-fuel-firms	replacement	format (photo credit)		caption0	 Photograph: Allison Bailey/REX/Shutterstock	[DELETE]
+Sky_2024-06-27_Police-arrest-key	replacement	format (photo credit)		caption0	 Pic: Just Stop Oil	[DELETE]
+Sky_2024-06-27_Police-arrest-key	replacement	format (photo credit)		caption1	 Pic: PA	[DELETE]
+BBC_2024-03-16_Climate-Choir-movement-Using	replacement	incongruity (flow)		text	"Jo Flanagan, 61, from Bristol"	"A woman who started a climate choir has said they are trying to change people's ""hearts and minds"" about the climate crisis through singing rather than shouting.\nJo Flanagan, 61, from Bristol"
+BBC_2024-03-16_Climate-Choir-movement-Using	replacement	incongruity (flow)		text	" She added: ""We try and change hearts and minds through singing rather than shouting."""	[DELETE]
+BBC_2024-03-16_Climate-Choir-movement-Using	replacement	incongruity (flow)		text	"However, their Westminster action"	"Their Westminster action"
+Mirror_2024-03-23_Environmental-activists-Just-Stop	replacement	format (photo credit)		caption0	 (Image: PA)	[DELETE]
+Mirror_2024-03-23_Environmental-activists-Just-Stop	replacement	format (photo credit)		caption1	\n (\n\nImage:\nMaureen McLean/REX/Shutterstock)	[DELETE]
+Metro_None_Is-Just-Stop-Oil	replacement	format (photo credit)		caption0	 (Picture:Leon Neal/Getty Images)	[DELETE]
+Metro_None_Is-Just-Stop-Oil	replacement	format (photo credit)		caption1	 (Picture: Dan Kitwood/Getty Images)	[DELETE]
+Metro_None_Is-Just-Stop-Oil	replacement	format (photo credit)		caption2	 (Picture: Vuk Valcic/SOPA Images/Shutterstock)	[DELETE]
+The-Times_2025-02-07_Pete-Wilkinson-obituary-Greenpeace	replacement	format (photo credit)		caption0	JACQUELINE HAYNES-SMART/FAIRFAX MEDIA VIA GETTY IMAGES	[DELETE]
+The-Times_2025-02-07_Pete-Wilkinson-obituary-Greenpeace	replacement	incongruity (flow)		text	"Pete Wilkinson, who died aged 78 from a suspected heart attack,"	"Pete Wilkinson"
+The-Times_2025-02-07_Pete-Wilkinson-obituary-Greenpeace	replacement	incongruity (flow)		text	"latterly fighting the proposed Sizewell C nuclear power station."	"latterly fighting the proposed Sizewell C nuclear power station.\nPete Wilkinson died of a suspected heart attack on January 21, 2025, aged 78"
