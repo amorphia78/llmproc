@@ -6,19 +6,18 @@ Disruptive protest is protest that appears to be aimed at disrupting the functio
 
 These are the five types of content to be marked. Note, actions that are reported as being planned rather than as having happened count in the same way as if they had happened.
 
-DISRUPTION effects (direct or knock-on) of the disruptive protest. Start tag: #DS. End tag: #DE.
-PROTESTER MESSAGING - the messages protesters are trying to convey, for example quotes (from a person or a banner) or reported summaries of things protesters said. Take care to include messaging only from protesters or their allies, not messaging from critics of protesters. Start tag: #MS. End tag: #ME.
-POSITIVE COMMENTS - approval of the protest or its effects, expressed by anyone except the protesters themselves. This might be expressed by a quoted individual, or reported in general terms (e.g., “passers-by shouted approvingly”), or expressed by the author of the article. Start tag: #PS. End tag: #PE.
-NEGATIVE COMMENTS - criticism of the protest or its effects. This might be expressed by a quoted individual, reported in general terms (e.g., “passers-by shouted disapprovingly”), or expressed by the author of the article. Start tag: #NS. End tag: #NE.
+DISRUPTION effects (direct or knock-on) of the disruptive protest. If article content superficially seems like it describes a disruption effect, then it does - there are no special reasons why some descriptions of disruption effects don't count. Knock-on effects such as court proceedings do count as disruption effects. Start tag: #DS. End tag: #DE.
+PROTESTER MESSAGING - the messages protesters are trying to convey, for example quotes (from a person or on a banner) or reported summaries of things protesters said. Take care to include messaging only from protesters or their allies, not messaging from critics of protesters. Start tag: #MS. End tag: #ME.
+POSITIVE COMMENTS - approval of the protest, protesters, or the protest's effects (and only those), expressed by anyone except the protesters themselves. This might be expressed by any quoted individual in any capacity in any way (e.g., politician, commentator, but not the protesters), or reported in general terms (e.g., “passers-by shouted approvingly”), or expressed by the author of the article. Start tag: #PS. End tag: #PE.
+NEGATIVE COMMENTS - criticism of the protest, protesters, or the protest's effects (and only those), expressed by any quoted individual in any capacity in any way (e.g. a judge when sentencing, police, politician, commentator, other environmentalist, member of the public), reported in general terms (e.g., “passers-by shouted disapprovingly”), or expressed by the author of the article. Start tag: #NS. End tag: #NE.
 
 You will mark content blocks by inserting start and end tags into the article text. You will reproduce the article content exactly as it is provided, but you will insert tags that mark the start and end of blocks of content. All content that is of a type defined above must be marked as being inside a content block of the correct type.  Different types of content block can potentially overlap, because content could fulfil criteria to be included in more than one category. Here is an example created to illustrate this: "Extinction Rebellion protesters were on the streets of London today. #DS They blocked a main road using #MS a banner saying 'End Fossil Fuels Now'. #ME #DE #NS Minister Priti Patel said 'This government will never give in to the eco-yobs.' #NE"
 
 The articles come in sections: ID, title, subtitle, and main content (marked just as content). Do not code the ID but code the other three sections. The Subtitle may be missing. Do not start a content block in one section and carry it over into the next section. End the block and if necessary start it again in the next section. 
 
-There are some tags already in the article content, which relate to pictures from the original article. #PH indicates that a picture was here. #PH will normally be followed by #CS and #CE which indicate the start and end of text that is the caption and alt text for that picture. When you are coding, use the caption and alt text to determine what is in the picture, and include it in blocks if necessary, by making sure the relevant #PH tag is inside the block. For example, a picture indicated as containing banners with messages should be inside a messaging content block. As another example, a picture showing a road block should be inside a disruption effects block.
+There are some tags already in the article content, relating to pictures from the original article. #PH indicates that a picture was here. #PH will normally be followed by #CS and #CE which indicate the start and end of text that is the caption and alt text for that picture. When you are coding, use the caption and alt text to determine what is in the picture, and include it in blocks if necessary, by making sure the relevant #PH tag is inside the block. For example, a picture indicated as containing banners with messages should be inside a messaging content block. As another example, a picture showing a road block should be inside a disruption effects block.
 
-Below are three articles that have already been coded in this manner. Note, there are also comments on the article that help explain the justification for coding choices made. The places in the material that the comments apply to are marked [COMMENTX] where X is a number, and the same [COMMENTX] identifiers appear at the end where the comments themselves are given.
-
+Below are four articles that have already been coded in this manner. Note, there are also comments on the article that help explain the justification for coding choices made. The places in the material that the comments apply to are marked [COMMENTX] where X is a number, and the same [COMMENTX] identifiers appear at the end where the comments themselves are given.
 
 
 ID: BBC_2020-09-05_Extinction-Rebellion-protesters
@@ -46,6 +45,7 @@ Hertfordshire Police said officers were called to Great Eastern Road[COMMENT12] 
 
 
 #MS XR has accused the newspapers and their owners of "failure to report on the climate and ecological emergency" and "polluting national debate" on dozens of social issues. The group is calling on the government to do more to act on climate change. #ME[COMMENT14]
+
 
 ID: BBC_2020-09-20_GM-crops_-The
 Source: BBC
@@ -112,6 +112,14 @@ The Metropolitan Police said Tuesday's gathering could only take place off the m
 Last year, more than 1,700 arrests were made during Extinction Rebellion's 10-day Autumn Uprising.
 #PH#CS Protesters gathered in Westminster to urge the government to prepare for a "climate crisis" (Alt: A line of police surrounds a crowd of protesters) #CE #DE
 
+ID: sun_example
+Source: Sun
+Title: #DS #NS Eco-zealots glue themselves #NE to priceless painting #DE
+Subtitle: #DS Gallery chaos as protesters strike again #DE
+Content: #DS #NS Eco-zealots brought a top London gallery to a standstill #NE yesterday after supergluing themselves to a masterpiece worth millions.
+#NS The barmy activists caused mayhem #NE at the National Gallery when they attached their hands to the frame of a Van Gogh painting during the morning rush.
+#NS Furious visitors were left fuming #NE as security guards scrambled to deal with the protesters, #MS who were chanting slogans about climate change. #ME #DE
+
 [COMMENT1]Note, the entire title is clearly about disruption, so it’s a disruption content block. The block ends even though the first content (which happens to be a picture) is also about disruption, because we don’t continue blocks across sections (title, subtitle (which is missing here), and main text (which starts “Content:”)).
 [COMMENT2]Note – this #DS (disruption start) is before the #PH (picture here). This means the picture is included in the block of disruption content - appropriate because the caption and the alt text indicate that the picture illustrates disruption.
 [COMMENT3]Note – no #DE yet, so we are still in a disruption content block, because the article text following the picture describes disruption. 
@@ -176,11 +184,11 @@ End of article for tagging. Now respond with the entire article in its original 
 """
 
 have_another_go_no_error_prompt = """
-Sometimes mistakes are made. The formatting of your tagging is correct - good - but sometimes the wrong content is tagged. Please check your previous output for compliance to the rules of this tagging task. If you have made any mistakes, please produce new output that corrects the mistakes. If you have not made any mistakes, please repeat the previous output.
+Occasionally mistakes are made. The formatting of your tagging is correct - good - but sometimes the wrong content is tagged. Please check your previous output for compliance to the rules of this tagging task. If you have made any mistakes, please produce new output that corrects the mistakes. If you have not made any mistakes, please repeat the previous output. Note that being given an opportunity to make corrections does not imply you have made mistakes.
 """
 
 have_another_go_after_error_prompt = """
-Sometimes mistakes are made. There is indeed a format error in your tagging. It's also possible the wrong content is tagged, but this has not been checked and it may be correct. Please check your previous output for compliance to the rules of this tagging task and produce new output that corrects the mistakes. The error that your tagging has raised is:
+Occasionally mistakes are made. There is indeed a format error in your tagging. It's also possible the wrong content is tagged, but this has not been checked and it may be correct. Please check your previous output for compliance to the rules of this tagging task and produce new output that corrects the mistakes. The error that your tagging has raised is:
 """
 
 import json
@@ -610,39 +618,61 @@ def write_word_counts_file_for_batch_3_style(articles, append_file=""):
             f.write('\t'.join(row) + '\n')
 
 
-def write_word_counts_file(articles, append_file=""):
-    output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_{append_file}.tsv'
+def write_word_counts_file(articles, append_file="", output_folder = "output_folders/article_content_block_word_counts/"):
+    output_path = f'{output_folder}block_word_counts_{timestamp}_{append_file}.tsv'
 
-    # Define the stat fields based on our block types
-    stat_fields = [
-        'total_words', 'total_pictures',
-        'general_disruption_words', 'general_disruption_pictures',
-        'personal_effects_words', 'personal_effects_pictures',
-        'protester_messaging_words', 'protester_messaging_pictures',
-        'positive_comments_words', 'positive_comments_pictures',
-        'negative_comments_words', 'negative_comments_pictures'
-    ]
+    # Define block types
+    block_types = ['total', 'general_disruption', 'protester_messaging', 'positive_comments', 'negative_comments']
 
-    content_types = ['title', 'subtitle', 'main_content']
+    # Define content sections and their stat types
+    content_sections = {
+        'title': ['words'],
+        'subtitle': ['words'],
+        'main_content': ['words', 'pictures'],
+        'all_content': ['words', 'pictures', 'words_and_pictures']
+    }
+
+    # Build header
     header = ['id']
-    for content_type in content_types:
-        for stat in stat_fields:
-            header.append(f'{content_type}_{stat}')
-    header.append('tagging_error')  # Add the new column
+    for section, stat_types in content_sections.items():
+        for block in block_types:
+            for stat_type in stat_types:
+                header.append(f'{section}_{block}_{stat_type}')
+    header.append('tagging_error')
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write('\t'.join(header) + '\n')
+
         for article_id, article in articles.items():
             row = [article_id]
-            for content_type in content_types:
-                analysis_key = f'{content_type}_analysis'
-                analysis_dict = article.get(analysis_key, {})
-                if isinstance(analysis_dict, dict):
-                    for stat in stat_fields:
-                        row.append(str(analysis_dict.get(stat, 0)))
-                else:
-                    row.extend(['0'] * len(stat_fields))
-            # Add the tagging error status
+
+            # Get analysis dicts
+            analyses = {
+                'title': article.get('title_analysis', {}),
+                'subtitle': article.get('subtitle_analysis', {}),
+                'main_content': article.get('main_content_analysis', {})
+            }
+
+            # Ensure all are dicts
+            for key in analyses:
+                if not isinstance(analyses[key], dict):
+                    analyses[key] = {}
+
+            # Process title, subtitle, main_content
+            for section in ['title', 'subtitle', 'main_content']:
+                for block in block_types:
+                    for stat_type in content_sections[section]:
+                        key = f'{block}_{stat_type}'
+                        row.append(str(analyses[section].get(key, 0)))
+
+            # Process all_content (combined)
+            for block in block_types:
+                words = sum(analyses[s].get(f'{block}_words', 0) for s in ['title', 'subtitle', 'main_content'])
+                pictures = analyses['main_content'].get(f'{block}_pictures', 0)
+                words_and_pictures = words + (pictures * 50)
+
+                row.extend([str(words), str(pictures), str(words_and_pictures)])
+
             row.append(article.get('tagging_error', 'no'))
             f.write('\t'.join(row) + '\n')
 
@@ -730,10 +760,11 @@ def llm_code_and_count_old():
 def llm_code_and_count(
         directory_to_process = "../coding_batches/batch6/individual_articles/specific_and_edited",
         do_manual_corrections = False,
-        output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_LLMResponses.txt'
+        output_folder = f'output_folders/article_content_block_word_counts/'
     ):
     articles_for_coding = parse_articles_from_html_directory( directory_to_process )
-    with open(output_path, 'w', encoding='utf-8') as f:
+    output_file = f"{output_folder}/article_content_block_word_counts_{timestamp}_LLMResponses.txt"
+    with open(output_file, 'w', encoding='utf-8') as f:
         articles_with_first_tagging = {}
         articles_with_second_tagging = {}
         for article in articles_for_coding.values():
@@ -775,20 +806,19 @@ def llm_code_and_count(
 
             articles_with_second_tagging[article_with_second_tagging["id"]] = article_with_second_tagging
 
-            break
-
         with open('llm_coded_content_blocks.json', 'w') as f:
             json.dump(articles_with_second_tagging, f, indent=4)
-        write_word_counts_file(articles_with_first_tagging, "first")
-        write_word_counts_file(articles_with_second_tagging, "second")
+        write_word_counts_file(articles_with_first_tagging, "first", output_folder )
+        write_word_counts_file(articles_with_second_tagging, "second", output_folder )
         if do_manual_corrections:
             apply_manual_corrections(articles_with_second_tagging, "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt" )
 
 
 def main():
     llm_code_and_count(
-        "../coding_batches/batch7/batch7_individual_articles/owe_specific/production",
-        False
+        "../coding_batches/batch7/batch7_individual_articles/tmp_for_word_count_test/",
+        False,
+        "../coding_batches/batch7/batch7_individual_articles/tmp_for_word_count_test/",
     )
     #llm_code_and_count()
     #count_vanessa_batch_3()

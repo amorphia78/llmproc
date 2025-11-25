@@ -65,7 +65,7 @@ def send_prompt(prompt, llm_task_type="summariser", prefill="", prior_prompt="",
     #    print(f"Message {i}: role='{msg.get('role')}', content='{msg.get('content')}'")
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
-        max_tokens=1000,
+        max_tokens=2000,
         temperature=0,
 #        system=system,
         messages=messages,
