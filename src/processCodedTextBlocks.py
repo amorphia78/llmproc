@@ -6,13 +6,12 @@ Disruptive protest is protest that appears to be aimed at disrupting the functio
 
 These are the five types of content to be marked. Note, actions that are reported as being planned rather than as having happened count in the same way as if they had happened.
 
-GENERAL DISRUPTION effects (direct or knock-on) of the disruptive protest on anyone other than the protesters themselves. This includes all disruption except that which only affects protesters themselves. Start tag: #GS. End tag: #GE.
-PERSONAL EFFECTS of the disruptive protest on the protesters themselves, for example legal sentences or injuries sustained. Start tag: #ES. End tag: #EE.
+DISRUPTION effects (direct or knock-on) of the disruptive protest. Start tag: #DS. End tag: #DE.
 PROTESTER MESSAGING - the messages protesters are trying to convey, for example quotes (from a person or a banner) or reported summaries of things protesters said. Take care to include messaging only from protesters or their allies, not messaging from critics of protesters. Start tag: #MS. End tag: #ME.
 POSITIVE COMMENTS - approval of the protest or its effects, expressed by anyone except the protesters themselves. This might be expressed by a quoted individual, or reported in general terms (e.g., “passers-by shouted approvingly”), or expressed by the author of the article. Start tag: #PS. End tag: #PE.
 NEGATIVE COMMENTS - criticism of the protest or its effects. This might be expressed by a quoted individual, reported in general terms (e.g., “passers-by shouted disapprovingly”), or expressed by the author of the article. Start tag: #NS. End tag: #NE.
 
-You will mark content blocks by inserting start and end tags into the article text. You will reproduce the article content exactly as it is provided, but you will insert tags that mark the start and end of blocks of content. All content that is of a type defined above must be marked as being inside a content block of the correct type.  Different types of content block can potentially overlap, because content could fulfil criteria to be included in more than one category. Here is an example created to illustrate this: "Extinction Rebellion protesters were on the streets of London today. #GS They blocked a main road using #MS a banner saying 'End Fossil Fuels Now'. #ME #GE #NS Minister Priti Patel said 'This government will never give in to the eco-yobs.' #NE"
+You will mark content blocks by inserting start and end tags into the article text. You will reproduce the article content exactly as it is provided, but you will insert tags that mark the start and end of blocks of content. All content that is of a type defined above must be marked as being inside a content block of the correct type.  Different types of content block can potentially overlap, because content could fulfil criteria to be included in more than one category. Here is an example created to illustrate this: "Extinction Rebellion protesters were on the streets of London today. #DS They blocked a main road using #MS a banner saying 'End Fossil Fuels Now'. #ME #DE #NS Minister Priti Patel said 'This government will never give in to the eco-yobs.' #NE"
 
 The articles come in sections: ID, title, subtitle, and main content (marked just as content). Do not code the ID but code the other three sections. The Subtitle may be missing. Do not start a content block in one section and carry it over into the next section. End the block and if necessary start it again in the next section. 
 
@@ -24,46 +23,47 @@ Below are three articles that have already been coded in this manner. Note, ther
 
 ID: BBC_2020-09-05_Extinction-Rebellion-protesters
 Source: BBC
-Title: #GS Extinction Rebellion protesters block newspaper printing presses #GE[COMMENT1]
-Content: #GS[COMMENT2] #PH #CS Protesters gathered outside the sites - including Broxbourne in Hertfordshire - owned by Rupert Murdoch's News Corporation #CE [COMMENT3]
-Extinction Rebellion (XR) activists have delayed the distribution of several national newspapers after blocking access to three printing presses owned by Rupert Murdoch. Protesters targeted Newsprinters presses at Broxbourne in Hertfordshire, Knowsley in Merseyside, and near Motherwell, North Lanarkshire. #GE[COMMENT4] #NS Prime Minister Boris Johnson said the action was "unacceptable" #NE[COMMENT5].
+Title: #DS Extinction Rebellion protesters block newspaper printing presses #DE[COMMENT1]
+Content: #DS[COMMENT2] #PH #CS Protesters gathered outside the sites - including Broxbourne in Hertfordshire - owned by Rupert Murdoch's News Corporation (Alt: Protesters climbing on a vehicle at a blockade near the Broxbourne printing press)#CE [COMMENT3]
+Extinction Rebellion (XR) activists have delayed the distribution of several national newspapers after blocking access to three printing presses owned by Rupert Murdoch. Protesters targeted Newsprinters presses at Broxbourne in Hertfordshire, Knowsley in Merseyside, and near Motherwell, North Lanarkshire. #DE[COMMENT4] #NS Prime Minister Boris Johnson said the action was "unacceptable" #NE[COMMENT5].
 
 
 
-#GS #ES Eighty people have been arrested. #EE[COMMENT6] The presses print the Rupert Murdoch-owned News Corp titles including the Sun, the Times, the Sun on Sunday, the Sunday Times, and the Scottish Sun. They also print the Daily Telegraph and Sunday Telegraph, the Daily Mail and Mail on Sunday, and the London Evening Standard.[COMMENT7]
+#DS [COMMENT6] Eighty people have been arrested. The presses print the Rupert Murdoch-owned News Corp titles including the Sun, the Times, the Sun on Sunday, the Sunday Times, and the Scottish Sun. They also print the Daily Telegraph and Sunday Telegraph, the Daily Mail and Mail on Sunday, and the London Evening Standard.[COMMENT7]
 
 
 
-XR used vehicles to block roads to the printing plants, while individual protesters chained themselves to structures. [COMMENT8]#GE[COMMENT9] #MS Vans were covered with banners with messages including "Free the truth" and "Refugees are welcome here".
+XR used vehicles to block roads to the printing plants, while individual protesters chained themselves to structures. [COMMENT8]#DE[COMMENT9] #MS Vans were covered with banners with messages including "Free the truth" and "Refugees are welcome here".
 
 
 
 Demonstrators have accused the papers of failing to report on climate change. #ME[COMMENT10] #NS Boris Johnson said, "A free press is vital in holding the government and other powerful institutions to account on issues critical for the future of our country, including the fight against climate change. It is completely unacceptable to seek to limit the public's access to news in this way." #NE
-#GS[COMMENT11] #PH #CS XR used vehicles along with individual protesters chaining themselves to structures to block roads to the presses #CE 
+#DS[COMMENT11] #PH #CS XR used vehicles along with individual protesters chaining themselves to structures to block roads to the presses (Alt: Protesters climbing and chaining themselves to structures outside a printing press)#CE 
 
 
-Hertfordshire Police said officers were called to Great Eastern Road[COMMENT12] near the Broxbourne plant at about 22:00 BST, where they found about 100 protesters who had "secured themselves to structures and one another". By 06:00 delivery lorries had still been unable to leave the site to distribute papers. #GE[COMMENT13]
+Hertfordshire Police said officers were called to Great Eastern Road[COMMENT12] near the Broxbourne plant at about 22:00 BST, where they found about 100 protesters who had "secured themselves to structures and one another". By 06:00 delivery lorries had still been unable to leave the site to distribute papers. #DE[COMMENT13]
 
 
 
 #MS XR has accused the newspapers and their owners of "failure to report on the climate and ecological emergency" and "polluting national debate" on dozens of social issues. The group is calling on the government to do more to act on climate change. #ME[COMMENT14]
+
 ID: BBC_2020-09-20_GM-crops_-The
 Source: BBC
-Title: GM crops: [COMMENT15]#GS The Greenpeace activists who risked jail to destroy a field of maize #GE
-Content: #GS [COMMENT16]#PH#CS Greenpeace protesters destroy a field of GM crops at Lyng, Norfolk on 26 July 1999 #CE 
-In a landmark environmental protest, 28 Greenpeace activists destroyed a field of genetically-modified (GM) maize on a farm in Norfolk in July 1999. #GE[COMMENT17] The group, which included a vicar and a beauty consultant, was led by Greenpeace executive director Lord Peter Melchett, a former government minister and Norfolk farmer.
+Title: GM crops: [COMMENT15]#DS The Greenpeace activists who risked jail to destroy a field of maize #DE
+Content: #DS [COMMENT16]#PH#CS Greenpeace protesters destroy a field of GM crops at Lyng, Norfolk on 26 July 1999 (Alt: Greenpeace activists in white overalls destroying a field of maize)#CE 
+In a landmark environmental protest, 28 Greenpeace activists destroyed a field of genetically-modified (GM) maize on a farm in Norfolk in July 1999. #DE[COMMENT17] The group, which included a vicar and a beauty consultant, was led by Greenpeace executive director Lord Peter Melchett, a former government minister and Norfolk farmer.
 
 
 
-#GS[COMMENT18] At 05:00 BST on 26 July, the protesters stormed the six-acre field of modified fodder maize, trampling and pulling at the 7ft plants. They used a machine with whirling 4ft blades to destroy a large section of the crop, planning to bag it up and deliver it to Norfolk-based GM contractors AgrEvo. #GE
+#DS[COMMENT18] At 05:00 BST on 26 July, the protesters stormed the six-acre field of modified fodder maize, trampling and pulling at the 7ft plants. They used a machine with whirling 4ft blades to destroy a large section of the crop, planning to bag it up and deliver it to Norfolk-based GM contractors AgrEvo. #DE
 
 
 
 #MS The activists opposed such trials, claiming they would cause genetic pollution of the environment. Michael Uwins, Greenpeace's East of England co-ordinator, stated, "We totally believed in what we were doing. We were not anti-science or GM as such; it was about open-air field trials. It was irresponsible and had to be stopped." #ME[COMMENT19]
-#PH#CS Now 74, Michael Uwins describes himself as an "armchair activist" #CE 
+#PH#CS Now 74, Michael Uwins describes himself as an "armchair activist" (Alt: An elderly smiling man standing on a beach) #CE 
 
 
-#NS #ES The protesters were confronted by the "furious" landowner William Brigham and family members, who were "ramming and chasing the protesters around the field." #EE #NE [COMMENT20]#GS Police soon arrived, and #ES the activists were arrested and charged with criminal damage and theft. #EE #GE
+#NS The protesters were confronted by the "furious" landowner William Brigham and family members, who were "ramming and chasing the protesters around the field." #NE [COMMENT20]#DS Police soon arrived, and the activists were arrested and charged with criminal damage and theft. #DE
 
 
 
@@ -76,23 +76,23 @@ The verdict was seen as a triumph by environmental activists but #NS described a
 
 
 This key moment in environmental protest brought the issue of GM crops to the attention of politicians, regulators, and the media, resulting in a more cautious approach to GMO release in the UK.
-#GS #ES #PH#CS Lord Peter Melchett was arrested at the scene #CE #EE #GE
+#DS #PH#CS Lord Peter Melchett was arrested at the scene (Alt: An environmental protester in a field being arrested by a police officer) #CE #DE
 
 
 ID: BBC_2020-09-01_Arrests-as-Extinction
 Source: BBC
-Title: #GS #ES Arrests as Extinction Rebellion protests begin across England #EE #GE
-Content: #GS #PH#CS Extinction Rebellion said it planned to "peacefully disrupt" Parliament with 10 days of demonstrations #CE 
-#ES At least 90 people have been arrested at climate change protests causing disruption across England. #EE Extinction Rebellion organised action in London to #MS urge the government to prepare for a "climate crisis" #ME. #ES Campaigners were arrested after they sat in the middle of the road next to Parliament Square to stop traffic. #EE #GE
+Title: #DS Arrests as Extinction Rebellion protests begin across England #DE
+Content: #DS #PH#CS Extinction Rebellion said it planned to "peacefully disrupt" Parliament with 10 days of demonstrations (Alt: An activist from the climate protest group Extinction Rebellion is carried away by police officers) #CE 
+At least 90 people have been arrested at climate change protests causing disruption across England. Extinction Rebellion organised action in London to #MS urge the government to prepare for a "climate crisis" #ME. Campaigners were arrested after they sat in the middle of the road next to Parliament Square to stop traffic. #DE
 
 
 
-#GS[COMMENT22] #MS[COMMENT23] Extinction Rebellion said it planned to "peacefully disrupt the UK Parliament in London" with 10 days of demonstrations until MPs backed the Climate and Ecological Emergency Bill. #ME Other planned events in the capital include a #MS "carnival of corruption", which is due to take place outside the Treasury, and a "walk of shame" near the Bank of England. #ME #GE
+#DS[COMMENT22] #MS[COMMENT23] Extinction Rebellion said it planned to "peacefully disrupt the UK Parliament in London" with 10 days of demonstrations until MPs backed the Climate and Ecological Emergency Bill. #ME Other planned events in the capital include a #MS "carnival of corruption", which is due to take place outside the Treasury, and a "walk of shame" near the Bank of England. #ME #DE
 
 
 
 #MS Protester Karen Wildin, a 56-year-old tutor from Leicester, said: "I'm here today because I have serious concerns about the future of the planet - we need to put this above anything else. Never mind Covid, never mind A-levels, this is the biggest crisis facing us and we need to raise the message as loudly as possible." #ME
-#GS #PH#CS The Met said the protests could result in "serious disruption" to businesses and commuters #CE #GE
+#DS #PH#CS The Met said the protests could result in "serious disruption" to businesses and commuters (Alt: An activist lying in the street is spoken to by police officers) #CE #DE
 
 
 #MS Sarah Lunnon, a member of Extinction Rebellion, said: "The failure to act on this issue will have a catastrophic impact on the future of us and the generations to come. We want to occupy Parliament Square to make our voices heard. Of course we're in the middle of a pandemic but we're balancing the risk, this is the biggest issue facing us." #ME
@@ -105,37 +105,37 @@ The Metropolitan Police said Tuesday's gathering could only take place off the m
 
 
 
-#GS #NS Met Commander Jane Connors said: "The reason we have implemented these conditions is that we know these protests may result in serious disruption to local businesses, commuters and our communities and residents, which I will not tolerate." #NE
+#DS #NS Met Commander Jane Connors said: "The reason we have implemented these conditions is that we know these protests may result in serious disruption to local businesses, commuters and our communities and residents, which I will not tolerate." #NE
 
 
 
-#ES Last year, more than 1,700 arrests were made during Extinction Rebellion's 10-day Autumn Uprising. #EE
-#PH#CS Protesters gathered in Westminster to urge the government to prepare for a "climate crisis" #CE #GE
+Last year, more than 1,700 arrests were made during Extinction Rebellion's 10-day Autumn Uprising.
+#PH#CS Protesters gathered in Westminster to urge the government to prepare for a "climate crisis" (Alt: A line of police surrounds a crowd of protesters) #CE #DE
 
-[COMMENT1]Note, the entire title is clearly about general disruption, so it’s a general disruption content block. The block ends even though the first content (which happens to be a picture) is also about general disruption, because we don’t continue blocks across sections (title, subtitle (which is missing here), and main text (which starts “Content:”)).
-[COMMENT2]Note – this #GS (general disruption start) is before the #PH (picture here). This means the picture is included in the block of general disruption content. I did this because I judge that the picture itself is illustrating disruption. I judge this because later in the article it says “XR used vehicles to block roads to the printing plants” so it’s beyond reasonable doubt that the picture that shows a protester on top of a vehicle surrounded by police is illustrating something disruptive.
-[COMMENT3]Note – no #GE yet, so we are still in a general disruption content block, because I judge the picture caption is continuing to explicitly describe disruption, because it says “Protesters gathered outside the sites” and includes further details that help us understand the target of the disruption. 
-[COMMENT4]Now I ended the general disruption block because while everything up to here was detailing disruption, the Johnson quote is commenting on the disruption rather than describing it.
+[COMMENT1]Note, the entire title is clearly about disruption, so it’s a disruption content block. The block ends even though the first content (which happens to be a picture) is also about disruption, because we don’t continue blocks across sections (title, subtitle (which is missing here), and main text (which starts “Content:”)).
+[COMMENT2]Note – this #DS (disruption start) is before the #PH (picture here). This means the picture is included in the block of disruption content - appropriate because the caption and the alt text indicate that the picture illustrates disruption.
+[COMMENT3]Note – no #DE yet, so we are still in a disruption content block, because the article text following the picture describes disruption. 
+[COMMENT4]Now I ended the disruption block because while everything up to here was detailing disruption, the Johnson quote is commenting on the disruption rather than describing it.
 [COMMENT5]This is clearly negative criticism of the actions.
-[COMMENT6]How many are arrested gives information about the level of general disruption, so we start a general disruption block again. Protesters getting arrested also represents personal effects on themselves, so that information (only) is covered by a personal effects block.
-[COMMENT7]Still in a general disruption block because this is clearly information about which newspapers may have been affected by the disruption.
-[COMMENT8]Still obviously about the general disruption so still inside the general disruption content block.
-[COMMENT9]I ended the general disruption block here because although the vans were used to cause disruption, the information about what they were “covered with” doesn’t tell us anything more about the disruption itself.
+[COMMENT6]How many are arrested gives information about the level of disruption, so we start a disruption block again.
+[COMMENT7]Still in a disruption block because this is clearly information about which newspapers may have been affected by the disruption.
+[COMMENT8]Still obviously about the disruption so still inside the disruption content block.
+[COMMENT9]I ended the disruption block here because although the vans were used to cause disruption, the information about what they were “covered with” doesn’t tell us anything more about the disruption itself.
 [COMMENT10]Note the messaging block ends here because the sentence following the banners is also reporting on the protesters’ reasons for the protest, which is definitely also part of their messaging. But again, the Johnson quote is neither providing details of the disruption nor the protesters messaging – but it is a negative criticism block.
-[COMMENT11]Starting a general disruption block here because the picture and the caption are about the disruption, in the same way that the previous picture was.
-[COMMENT12]I considered not including this in the general disruption block because information about what police do is not necessarily about the details of disruption, but I left it in because the police came because of the general disruption and because police being required to attend to deal with disruption is itself part of the disruption.
-[COMMENT13]The next bit is only about protesters messaging so the general disruption block ends here.
+[COMMENT11]Starting a disruption block here because the picture and the caption are about the disruption, in the same way that the previous picture was.
+[COMMENT12]I considered not including this in the disruption block because information about what police do is not necessarily about the details of disruption, but I left it in because the police came because of the disruption and because police being required to attend to deal with disruption is itself part of the disruption.
+[COMMENT13]The next bit is only about protesters messaging so the disruption block ends here.
 [COMMENT14]The entire paragraph was clearly about the protesters’ messaging.
-[COMMENT15]Note, I didn’t include this first bit of the title in the general disruption content block as this part of it doesn’t tell us anything about the disruption.
+[COMMENT15]Note, I didn’t include this first bit of the title in the disruption content block as this part of it doesn’t tell us anything about the disruption.
 [COMMENT16]I justify the inclusion of the picture in the same way as in the previous article.
-[COMMENT17]I ended the general disruption block here because although everything till now (including picture and caption) has been detailing the disruptive acts, the details of the occupations of the protesters doesn’t tell us about the disruption they carried out.
+[COMMENT17]I ended the disruption block here because although everything till now (including picture and caption) has been detailing the disruptive acts, the details of the occupations of the protesters doesn’t tell us about the disruption they carried out.
 [COMMENT18]I’m no longer commenting on choices that are by now (I hope) obvious.
 [COMMENT19]Note that this is a messaging block because it is messages protesters are trying to convey. Although it expresses approval of the action, it is not coded as an approval of the protest block, because that needs to be expressed by anyone except the protesters themselves
-[COMMENT20]Note that this text is both a personal effects block and a negative criticism block, because the confrontation, ramming, and chasing of the protesters by the landowner represents both personal effects for the protesters and also expression of disapproval about the protest.
+[COMMENT20]This block represented a rather extreme example of negative comment on the protesters, as the expression of "furious" sentiment involved the protesters being rammed and chased.  
 [COMMENT21]Note the careful positioning of the #NS tag so that the “verdict [being] seen as a triumph by environmental activists” is not included in a negative criticism block. The “triumph” phrase is not including in an approval block because it is an expression from activists themselves.
 [COMMENT22]Note that actions reported as planned count in the same way as is they have happened.
 [COMMENT23]Note, this messaging block begins while in a disruption block, because the threat to disrupt unless demands are met is both part of messaging and part of a description of disruption
-[COMMENT24]I didn’t put this in a general disruption block because it’s not clear whether these conditions relate to anything that was actually planned or happened.
+[COMMENT24]I didn’t put this in a disruption block because it’s not clear whether these conditions relate to anything that was actually planned or happened.
 
 
 End of three example articles. Here is the article for you to tag:
@@ -378,7 +378,7 @@ class InvalidTagNestingErrorBatch3Style(Exception):
 
 def ensure_tags_have_spaces(content):
     """Ensure all tags are properly separated by spaces."""
-    for tag in ['#GS', '#GE', '#PS', '#PE', '#MS', '#ME', '#AS', '#AE', '#NS', '#NE', '#PH', '#CS', '#CE']:
+    for tag in ['#DS', '#DE', '#PS', '#PE', '#MS', '#ME', '#AS', '#AE', '#NS', '#NE', '#PH', '#CS', '#CE']:
         content = content.replace(tag, f' {tag} ')
     return content
 
@@ -466,8 +466,7 @@ def analyze_content(content):
     """Analyze content with multiple block types."""
     # Define block types and their tags
     block_types = {
-        'general_disruption': {'start': '#GS', 'end': '#GE'},
-        'personal_effects': {'start': '#ES', 'end': '#EE'},
+        'general_disruption': {'start': '#DS', 'end': '#DE'},
         'protester_messaging': {'start': '#MS', 'end': '#ME'},
         'positive_comments': {'start': '#PS', 'end': '#PE'},
         'negative_comments': {'start': '#NS', 'end': '#NE'}
