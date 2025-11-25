@@ -700,9 +700,12 @@ def llm_code_and_count_old():
     write_word_counts_file(articles_with_second_tagging, "second")
 
 
-def llm_code_and_count():
-    articles_for_coding = parse_articles_from_html_directory( "../coding_batches/batch6/individual_articles/specific_and_edited")
-    output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_LLMResponses.txt'
+def llm_code_and_count(
+        directory_to_process = "../coding_batches/batch6/individual_articles/specific_and_edited",
+        do_manual_corrections = False,
+        output_path = f'output_folders/article_content_block_word_counts/block_word_counts_{timestamp}_LLMResponses.txt'
+    ):
+    articles_for_coding = parse_articles_from_html_directory( directory_to_process )
     with open(output_path, 'w', encoding='utf-8') as f:
         articles_with_first_tagging = {}
         articles_with_second_tagging = {}
@@ -745,15 +748,22 @@ def llm_code_and_count():
 
             articles_with_second_tagging[article_with_second_tagging["id"]] = article_with_second_tagging
 
+            break
+
         with open('llm_coded_content_blocks.json', 'w') as f:
             json.dump(articles_with_second_tagging, f, indent=4)
         write_word_counts_file(articles_with_first_tagging, "first")
         write_word_counts_file(articles_with_second_tagging, "second")
-        apply_manual_corrections(articles_with_second_tagging, "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt" )
+        if do_manual_corrections:
+            apply_manual_corrections(articles_with_second_tagging, "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt" )
 
 
 def main():
-    llm_code_and_count()
+    llm_code_and_count(
+        "../coding_batches/batch7/batch7_individual_articles/owe_specific/production",
+        False
+    )
+    #llm_code_and_count()
     #count_vanessa_batch_3()
     #count_batch_5_example()
 
