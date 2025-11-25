@@ -16,7 +16,7 @@ You will mark content blocks by inserting start and end tags into the article te
 
 The articles come in sections: ID, title, subtitle, and main content (marked just as content). Do not code the ID but code the other three sections. The Subtitle may be missing. Do not start a content block in one section and carry it over into the next section. End the block and if necessary start it again in the next section. 
 
-There are some tags already in the article content, which relate to pictures from the original article. #PH indicates that a picture was here. #PH will normally be followed by #CS and #CE which indicate the start and end of text that is the caption for that picture. When you are coding, use the caption to determine what is in the picture, and include it in blocks if necessary, by making sure the relevant #PH tag is inside the block. For example, a picture indicated as containing banners with messages should be inside a messaging content block. As another example, a picture showing a road block should be inside a disruption effects block.
+There are some tags already in the article content, which relate to pictures from the original article. #PH indicates that a picture was here. #PH will normally be followed by #CS and #CE which indicate the start and end of text that is the caption and alt text for that picture. When you are coding, use the caption and alt text to determine what is in the picture, and include it in blocks if necessary, by making sure the relevant #PH tag is inside the block. For example, a picture indicated as containing banners with messages should be inside a messaging content block. As another example, a picture showing a road block should be inside a disruption effects block.
 
 Below are three articles that have already been coded in this manner. Note, there are also comments on the article that help explain the justification for coding choices made. The places in the material that the comments apply to are marked [COMMENTX] where X is a number, and the same [COMMENTX] identifiers appear at the end where the comments themselves are given.
 
@@ -341,8 +341,13 @@ def parse_articles_from_html_directory(directory_path):
 
                         if img and figcaption:
                             caption_text = figcaption.get_text(strip=True)
-                            # Add image placeholder in the required format
-                            content_lines.append(f'#PH #CS {caption_text} #CE')
+                            alt_text = img.get('alt', '')  # Get alt text if it exists
+                            # Combine caption and alt text if both exist
+                            if alt_text and alt_text != caption_text:
+                                combined_text = f"{caption_text} (Alt: {alt_text})"
+                            else:
+                                combined_text = caption_text
+                            content_lines.append(f'#PH #CS {combined_text} #CE')
 
             # Join content lines and count words
             content_word_count = 0
@@ -484,8 +489,31 @@ def analyze_content(content):
     # Track depth of each block type
     block_depths = {block_type: 0 for block_type in block_types}
 
+    # Track caption and alt text state
+    in_caption = False
+    in_alt_text = False
+
     # Process words
     for i, word in enumerate(words):
+        # Handle caption tags
+        if word == '#CS':
+            in_caption = True
+            continue
+        elif word == '#CE':
+            in_caption = False
+            in_alt_text = False  # Reset alt text flag when leaving caption
+            continue
+
+        # Detect alt text within captions
+        if in_caption:
+            if word.startswith('(Alt:'):
+                in_alt_text = True
+            if in_alt_text and word.endswith(')'):
+                in_alt_text = False
+                continue  # Skip the closing word with )
+            if in_alt_text:
+                continue  # Skip all words inside alt text
+
         if word in special_tags:
             if word == '#PH':
                 stats['total_pictures'] += 1
