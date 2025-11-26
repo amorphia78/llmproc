@@ -956,6 +956,7 @@ def output_codes(file_name, article, do_coding, do_screening, do_summarising):
         ]
     with open(file_name, 'a') as coding_output_file:
         coding_output_file.write("\t".join(values))
+        #coding_output_file.write("\t" + (article.get("subtitle", "") or "")) #When I needed to quickly check subtitles
         if do_coding and article["passes_screening"] == "Yes":
             coding_output_file.write(
                 "\t" + "\t".join(str(article["codes_text"][code_name]) for code_name in pas.rating_code_names) + "\n")

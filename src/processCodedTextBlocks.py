@@ -491,6 +491,13 @@ def analyze_content(content):
 
     # Prepare content
     content = ensure_tags_have_spaces(content)
+
+    # Add spaces around punctuation to prevent word merging (for some reason the LLM is sometimes omitting whitespace)
+    # BUT preserve (Alt: pattern for alt text detection
+    content = re.sub(r'(?<!\(Alt)([.,!?;:)])', r' \1', content)  # Space before punctuation, except after (Alt
+    content = re.sub(r'\((?!Alt:)', r'( ', content)  # Space after opening paren, except for (Alt:
+    content = re.sub(r'\s+', ' ', content)  # Normalize multiple spaces
+
     words = content.split()
 
     # Track depth of each block type
@@ -530,6 +537,7 @@ def analyze_content(content):
             continue
 
         # Check if it's a block tag
+        is_tag = False
         for block_type, tags in block_types.items():
             if word == tags['start']:
                 if block_depths[block_type] > 0:
@@ -539,6 +547,7 @@ def analyze_content(content):
                         i
                     )
                 block_depths[block_type] += 1
+                is_tag = True
                 break
             elif word == tags['end']:
                 if block_depths[block_type] == 0:
@@ -548,9 +557,11 @@ def analyze_content(content):
                         i
                     )
                 block_depths[block_type] -= 1
+                is_tag = True
                 break
-        else:
-            # Word is not a tag, count it once for total
+
+        # Word is not a tag, count it if it contains letters (and not just punctuation)
+        if not is_tag and re.search(r'[a-zA-Z]', word):
             stats['total_words'] += 1
 
             # Then check which specific blocks it belongs to
@@ -619,7 +630,7 @@ def write_word_counts_file_for_batch_3_style(articles, append_file=""):
 
 
 def write_word_counts_file(articles, append_file="", output_folder = "output_folders/article_content_block_word_counts/"):
-    output_path = f'{output_folder}block_word_counts_{timestamp}_{append_file}.tsv'
+    output_path = f'{output_folder}block_word_counts_{append_file}.tsv'
 
     # Define block types
     block_types = ['total', 'general_disruption', 'protester_messaging', 'positive_comments', 'negative_comments']
@@ -688,7 +699,7 @@ def attach_tagging_error_to_original_article(article,tagged_article):
         )
 
 
-def apply_manual_corrections(articles_with_second_tagging, corrections_file_path):
+def apply_manual_corrections(articles_with_second_tagging, corrections_file_path, output_folder):
     articles_with_second_tagging_plus_corrections = articles_with_second_tagging.copy()
     manually_corrected_articles = parse_articles_file(corrections_file_path)
 
@@ -711,7 +722,7 @@ def apply_manual_corrections(articles_with_second_tagging, corrections_file_path
             else:
                 print(f"PROBLEM: No manual correction found for article with tagging error: {article_id}")
 
-    write_word_counts_file(articles_with_second_tagging_plus_corrections, "corrected")
+    write_word_counts_file(articles_with_second_tagging_plus_corrections, "corrected", output_folder )
 
 def count_vanessa_batch_3():
     articles_for_counting = parse_articles_file('Formatted_Articles_20241118_195911 (Vanessa_Coding_50_corrected).txt')
@@ -759,11 +770,12 @@ def llm_code_and_count_old():
 
 def llm_code_and_count(
         directory_to_process = "../coding_batches/batch6/individual_articles/specific_and_edited",
-        do_manual_corrections = False,
-        output_folder = f'output_folders/article_content_block_word_counts/'
+        do_manual_corrections = True,
+        output_folder = f'output_folders/article_content_block_word_counts/',
+        corrections_file = "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt"
     ):
     articles_for_coding = parse_articles_from_html_directory( directory_to_process )
-    output_file = f"{output_folder}/article_content_block_word_counts_{timestamp}_LLMResponses.txt"
+    output_file = f"{output_folder}/article_content_block_word_counts_LLMResponses.txt"
     with open(output_file, 'w', encoding='utf-8') as f:
         articles_with_first_tagging = {}
         articles_with_second_tagging = {}
@@ -811,14 +823,15 @@ def llm_code_and_count(
         write_word_counts_file(articles_with_first_tagging, "first", output_folder )
         write_word_counts_file(articles_with_second_tagging, "second", output_folder )
         if do_manual_corrections:
-            apply_manual_corrections(articles_with_second_tagging, "../coding_batches/batch6/individual_articles/specific_and_edited_block_tagging_manual_corrections/tagged_content_manually_corrected.txt" )
+            apply_manual_corrections(articles_with_second_tagging, corrections_file, output_folder )
 
 
 def main():
     llm_code_and_count(
-        "../coding_batches/batch7/batch7_individual_articles/tmp_for_word_count_test/",
-        False,
-        "../coding_batches/batch7/batch7_individual_articles/tmp_for_word_count_test/",
+        "../coding_batches/batch7/batch7_individual_articles/owe_specific/production/",
+        True,
+        "../coding_batches/batch7/batch7_individual_articles/owe_specific/word_count_output/",
+        "../coding_batches/batch7/batch7_individual_articles/owe_specific/word_count_output/corrections.txt"
     )
     #llm_code_and_count()
     #count_vanessa_batch_3()
